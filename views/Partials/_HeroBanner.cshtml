@@ -1,0 +1,93 @@
+2. Document Type: Standard Page (Trang nội dung thông thường)
+Dùng cho các trang con như About, Contact.
+
+Tên (Name): Standard Page
+
+Alias: standardPage
+
+Template: StandardPage
+
+Permissions:
+
+Allow at root: Không tích
+
+Allowed as child node: Tích ✅ Homepage, Standard Page
+
+Properties:
+
+Group: Content
+
+Tên: Body Content / Alias: bodyContent / Editor: Rich Text Editor
+
+Group: Navigation
+
+Tên: Hide from Navigation / Alias: umbracoNaviHide / Editor: True/False
+
+3. Document Type: Company Settings (Thông tin chung)
+Đây là trang chứa các thông tin toàn cục, không có URL công khai.
+
+Tên (Name): Company Settings
+
+Alias: companySettings
+
+Template: Không cần
+
+Permissions:
+
+Allow at root: Đã tích ✅
+
+Allowed as child node: Không tích
+
+Properties:
+
+Group: Contact Info
+
+Tên: Address / Alias: address / Editor: Textstring
+
+Tên: Phone Number / Alias: phoneNumber / Editor: Textstring
+
+Tên: Email Address / Alias: emailAddress / Editor: Textstring
+
+Group: Social Media
+
+Tên: Facebook URL / Alias: facebookUrl / Editor: Url Picker
+
+Tên: LinkedIn URL / Alias: linkedinUrl / Editor: Url Picker
+
+Group: Company Details
+
+Tên: Company Name / Alias: companyName / Editor: Textstring
+
+Tên: Company Logo / Alias: companyLogo / Editor: Media Picker
+
+4. Document Type cho các Blocks (Component)
+Các loại này dùng để xây dựng nội dung trong Block List.
+
+Block: Hero Banner
+Tên (Name): Hero Banner / Alias: heroBanner
+
+Template: _HeroBanner (Tạo trong /Views/Partials/BlockList/Components)
+
+Properties:
+
+Tên: Heading / Alias: heading / Editor: Textstring
+
+Tên: Subtitle / Alias: subtitle / Editor: Textstring
+
+Tên: Image / Alias: image / Editor: Media Picker
+
+Code mẫu trong _HeroBanner.cshtml:
+
+C#
+
+@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits UmbracoViewPage<HeroBanner>
+
+<div class="hero-banner">
+    <h2>@Model.Heading</h2>
+    <p>@Model.Subtitle</p>
+    @if (Model.Image != null)
+    {
+        <img src="@Model.Image.Url()" alt="@Model.Image.Name()" />
+    }
+</div>

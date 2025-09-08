@@ -1,0 +1,21 @@
+@using Umbraco.Cms.Web.Common.PublishedModels;
+@using Umbraco.Cms.Core.Models.Blocks;
+@using Umbraco.Cms.Web.Common.Views;
+@inherits UmbracoViewPage<Homepage>
+
+@{
+    Layout = "_Layout.cshtml";
+}
+
+@* Sử dụng alias để lấy giá trị *@
+@{
+    ViewData["Title"] = Model.Value("metaTitle");
+}
+
+<div class="homepage-content">
+    @* Tên trong code phải khớp chính xác với alias *@
+    @if (Model.ContentBlocks != null && Model.ContentBlocks.Any())
+    {
+        @await Html.GetBlockListHtmlAsync(Model.ContentBlocks)
+    }
+</div>
