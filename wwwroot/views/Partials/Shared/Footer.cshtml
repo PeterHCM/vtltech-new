@@ -1,0 +1,95 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Extensions
+
+@{
+    var settings = Model;
+    var companyName = settings?.Value<string>("companyName");
+    var companyDescription = settings?.Value<string>("companyDescription");
+    var websiteLogo = settings?.Value<IPublishedContent>("websiteLogoLight");
+    var facebookUrl = settings?.Value<string>("facebookUrl");
+    var youtubeUrl = settings?.Value<string>("youtubeUrl");
+    var workingHours = settings?.Value<string>("workingHours");
+    var copyrightText = settings?.Value<string>("copyright");
+
+    // Tạm thời gán URL trang hiện tại là "/"
+    var currentUrl = "https://vtltech.com.vn";
+    var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=" + currentUrl;
+}
+<footer class="bg-brand-gray-dark text-white px-6 md:px-12 lg:px-24 py-12">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
+
+        <!-- Cột 1: Thông tin công ty -->
+        <div>
+            <h3 class="text-lg font-semibold mb-4 text-brand-primary-orange">Công Ty TNHH Kỹ Thuật Việt Thắng Lợi</h3>
+
+            @if (websiteLogo != null)
+            {
+                <img src="@websiteLogo.Url()" alt="@companyName logo" class="h-10 mb-4">
+            }
+
+            @if (!string.IsNullOrEmpty(companyDescription))
+            {
+                <p class="text-sm text-brand-gray-light mb-4">@companyDescription</p>
+            }
+
+            <div class="flex gap-4">
+                @if (!string.IsNullOrEmpty(facebookUrl))
+                {
+                    <a href="@facebookUrl" target="_blank" aria-label="Facebook"
+                       class="text-brand-gray-light hover:text-brand-primary-orange transition">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">...</svg>
+                    </a>
+                }
+                @if (!string.IsNullOrEmpty(youtubeUrl))
+                {
+                    <a href="@youtubeUrl" target="_blank" aria-label="YouTube"
+                       class="text-brand-gray-light hover:text-brand-primary-orange transition">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">...</svg>
+                    </a>
+                }
+            </div>
+        </div>
+
+        <!-- Cột 2: Giờ làm việc + QR -->
+        <div>
+            <h3 class="text-lg font-semibold mb-4 text-brand-primary-orange">Giờ làm việc</h3>
+
+            @if (!string.IsNullOrEmpty(workingHours))
+            {
+                <div class="text-sm text-brand-gray-light whitespace-pre-line mb-4">
+                    @Html.Raw(workingHours)
+                </div>
+            }
+
+            <div class="mt-2">
+                <img src="@qrUrl" alt="QR Code" class="h-24 w-24 rounded bg-white p-1">
+                <p class="text-xs mt-2 text-brand-gray-light text-center">Quét để mở trang hiện tại</p>
+            </div>
+        </div>
+
+        <!-- Cột 3: Điều hướng -->
+        <div>
+            <h3 class="text-lg font-semibold mb-4 text-brand-primary-orange">Điều hướng</h3>
+            <ul class="space-y-2 text-sm text-brand-gray-light">
+                <li><a href="/ve-chung-toi" class="hover:text-brand-primary-orange transition">Về chúng tôi</a></li>
+                <li><a href="/dich-vu" class="hover:text-brand-primary-orange transition">Dịch vụ</a></li>
+                <li><a href="/blog" class="hover:text-brand-primary-orange transition">Tin tức & Blog</a></li>
+                <li><a href="/lien-he" class="hover:text-brand-primary-orange transition">Liên hệ</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="border-brand-gray-light/30 my-2">
+
+    <div class="text-center text-sm text-brand-gray-light mt-4">
+        @if (!string.IsNullOrEmpty(copyrightText))
+        {
+            @copyrightText
+        }
+        else
+        {
+            <span>&copy; @DateTime.Now.Year @companyName. All Rights Reserved.</span>
+        }
+    </div>
+</footer>

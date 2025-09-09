@@ -1,0 +1,36 @@
+@inherits UmbracoViewPage<IPublishedContent>
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Extensions
+
+@{
+    var companyName = Model.Value<string>("companyName");
+    var websiteLogo = Model.Value<IPublishedContent>("websiteLogoLight");
+}
+<header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+        
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-2">
+            @if (websiteLogo != null)
+            {
+                <img src="@websiteLogo.Url()" alt="@companyName logo" class="h-8 w-auto">
+            }
+            else
+            {
+                <span class="text-xl font-bold text-brand-primary-blue">@companyName</span>
+            }
+        </a>
+
+        <!-- Menu điều hướng -->
+        @await Html.PartialAsync("Partials/Shared/MainMenu")
+        <!-- CTA -->
+        <div class="hidden md:flex items-center gap-3">
+            <a href="/dang-ky" class="btn-secondary">Đăng ký</a>
+            <a href="/dang-nhap" class="btn-primary">Đăng nhập</a>
+        </div>
+
+        <!-- Mobile menu icon -->
+        @await Html.PartialAsync("Partials/Shared/MobileMenu")
+        
+    </div>
+</header>

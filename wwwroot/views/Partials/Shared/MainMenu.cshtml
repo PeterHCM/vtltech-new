@@ -1,0 +1,32 @@
+@* Mega menu với Alpine.js, không dùng @mouseenter *@
+<nav class="hidden md:flex gap-6 text-sm font-medium text-brand-gray-dark" x-data="{ open: null }">
+
+    <!-- Sản phẩm -->
+    <div class="relative" x-data="{ show: false }" x-on:mouseover="show = true" x-on:mouseleave="show = false" x-on:click.away="show = false">
+        <button x-on:click="show = !show" class="hover:text-brand-primary-orange transition">Sản phẩm</button>
+
+        <div x-show="show" x-transition class="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-md w-[600px] z-50 p-6 grid grid-cols-2 gap-4">
+            <div>
+                <h4 class="text-brand-primary-blue font-semibold mb-2">MTL</h4>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="/san-pham/mtl/mtl-1" class="hover:text-brand-primary-orange">MTL 1</a></li>
+                    <li><a href="/san-pham/mtl/mtl-2" class="hover:text-brand-primary-orange">MTL 2</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-brand-primary-blue font-semibold mb-2">Khác</h4>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="/san-pham/eaton" class="hover:text-brand-primary-orange">Eaton</a></li>
+                    <li><a href="/san-pham/wedmuller" class="hover:text-brand-primary-orange">Wedmuller</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Các mục đơn -->
+    <a href="/du-an" class="hover:text-brand-primary-orange transition">Dự án</a>
+    <a href="/giai-phap" class="hover:text-brand-primary-orange transition">Giải pháp</a>
+    <a href="/tai-lieu" class="hover:text-brand-primary-orange transition">Tài liệu</a>
+    <a href="/gioi-thieu" class="hover:text-brand-primary-orange transition">Giới thiệu</a>
+    <a href="/lien-he" class="hover:text-brand-primary-orange transition">Liên hệ</a>
+</nav>

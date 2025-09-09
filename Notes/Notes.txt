@@ -1,67 +1,16 @@
-1. Document Type: Homepage (Trang chủ)
-    Đây là Document Type cấp cao nhất của website.
-    Tên (Name): Homepage
-    Alias: homepage
-        Template: Homepage (Phải được tạo trong thư mục /Views)
-    Permissions:
-        Allow at root: Đã tích ✅
-        Allowed as child node: Không tích (Có thể tích nếu cần)
-    Properties:
-        Group: SEO
-            Tên: Meta Title / Alias: metaTitle / Editor: Textstring
-            Tên: Meta Description / Alias: metaDescription / Editor: Textstring
-        Group: Content
-            Tên: Content Blocks / Alias: contentBlocks / Editor: Block List
-        Settings: Cấu hình để cho phép các Block bạn đã tạo (ví dụ: HeroBanner, TextBlock)
-2. Document Type: Standard Page (Trang nội dung thông thường)
-    Dùng cho các trang con như About, Contact.
-    Tên (Name): Standard Page
-    Alias: standardPage
-    Template: StandardPage
-    Permissions:
-        Allow at root: Không tích
-        Allowed as child node: Tích ✅ Homepage, Standard Page
-    Properties:
-        Group: Content
-            Tên: Body Content / Alias: bodyContent / Editor: Rich Text Editor
-        Group: Navigation
-        Tên: Hide from Navigation / Alias: umbracoNaviHide / Editor: True/False
-3. Document Type: Company Settings (Thông tin chung)
-    Đây là trang chứa các thông tin toàn cục, không có URL công khai.
-    Tên (Name): Company Settings
-    Alias: companySettings
-    Template: Không cần
-    Permissions:
-    Allow at root: Đã tích ✅
-    Allowed as child node: Không tích
-    Properties:
-    Group: Contact Info
-        Tên: Address / Alias: address / Editor: Textstring
-        Tên: Phone Number / Alias: phoneNumber / Editor: Textstring
-        Tên: Email Address / Alias: emailAddress / Editor: Textstring
-    Group: Social Media
-        Tên: Facebook URL / Alias: facebookUrl / Editor: Url Picker
-        Tên: LinkedIn URL / Alias: linkedinUrl / Editor: Url Picker
-        Tên: LinkedIn URL / Alias: linkedinUrl / Editor: Url Picker
-    Group: Company Details
-        Tên: Company Name / Alias: companyName / Editor: Textstring
-        Tên: Company Logo / Alias: companyLogo / Editor: Media Picker
-4. Document Type cho các Blocks (Component)
-Các loại này dùng để xây dựng nội dung trong Block List.
-    Block: Hero Banner
-        Tên (Name): Hero Banner / Alias: heroBanner
-        Template: _HeroBanner (Tạo trong /Views/Partials/BlockList/Components)
-        Properties:
-        Tên: Heading / Alias: heading / Editor: Textstring
-        Tên: Subtitle / Alias: subtitle / Editor: Textstring
-        Tên: Image / Alias: image / Editor: Media Picker
-    Block: Text Block
-        Tên (Name): Text Block / Alias: textBlock
-        Template: _TextBlock
-        Properties:
-        Tên: Title / Alias: title / Editor: Textstring
-        Tên: Body Content / Alias: bodyContent / Editor: Rich Text Editor
-
+companySettings
+- companyName
+- companyDescription
+- companyAddress
+- companyLocation
+- companyFax
+- companyNumber
+- companyEmail
+- websiteLogo
+- websiteLogoLight
+- facebookUrl
+- youtubeUrl
+- copyright
 Tailwind CSS
 -css
 --peter.css (CSS của mình)

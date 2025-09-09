@@ -1,14 +1,22 @@
 {
-  "name": "Vtl Tech Co., Ltd.",
+  "name": "vtltech.com.vn-2025",
   "version": "1.0.0",
-  "description": "",
+  "description": "Dự án Umbraco tích hợp TailwindCSS và cá nhân hóa giao diện",
   "main": "index.js",
   "scripts": {
-    "watch:css": "tailwindcss -i ./wwwroot/css/peter.css -o ./wwwroot/css/site.css --watch"
+    "dev": "npm run watch:css",
+    "watch:css": "tailwindcss -i ./wwwroot/css/peter.css -o ./wwwroot/css/site.css --watch",
+    "build:css": "tailwindcss -i ./wwwroot/css/peter.css -o ./wwwroot/css/site.css --minify"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "umbraco",
+    "tailwindcss",
+    "vtltech",
+    "website",
+    "2025"
+  ],
+  "author": "VTL Tech Team",
+  "license": "MIT",
   "devDependencies": {
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
