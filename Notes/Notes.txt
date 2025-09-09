@@ -61,3 +61,11 @@ Các loại này dùng để xây dựng nội dung trong Block List.
         Properties:
         Tên: Title / Alias: title / Editor: Textstring
         Tên: Body Content / Alias: bodyContent / Editor: Rich Text Editor
+
+Tailwind CSS
+-css
+--peter.css (CSS của mình)
+--site.css (CSS sinh ra tự động dùng cho Site luôn)
+-js
+--peter.js (JS của mình thêm vào)
+--site.js (JS sinh ra tự động dùng cho Site luôn)
