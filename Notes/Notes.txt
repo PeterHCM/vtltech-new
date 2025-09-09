@@ -1,4 +1,18 @@
-companySettings
+I. Document Types
+
+Homepage (Alias: homepage)
+- contentBlocks (Block List)
+
+Product (product)
+-productTitle
+-shortDescription
+-imageGallery
+-productImage
+-productDetails
+
+Products (products)
+
+Company Settings (Alias: companySettings)
 - companyName
 - companyDescription
 - companyAddress
@@ -9,8 +23,71 @@ companySettings
 - websiteLogo
 - websiteLogoLight
 - facebookUrl
+- messengerUrl
 - youtubeUrl
+- zaloUrl
+- defaultMetaTitle
+- defaultMetaDescription
 - copyright
+
+
+II. Element Types (và các property):
+
+Page Settings (Alias: pageSettings)
+-naviHide
+-redirectUrl
+-hideFromSearch
+
+Composition SEO (Alias: seo)
+-metaTitle
+-metaDescription
+-seoCanonicalUrl
+-seoRobots
+-ogTitle
+-ogDescription
+-ogImage
+-twitterCardType
+
+
+Product/Article Grid (Alias: articleGrid)
+-title
+-introText
+-items (Content Picker)
+
+Base Content (Alias: pageTitle)
+-pageTitle
+-bodyText
+
+Text Block (textBlock)
+-title
+-bodyText
+
+
+CTA Block (Alias: ctaBlock)
+-title
+-description
+-buttonText
+-buttonLink
+Hero Banner (Alias: heroBanner)
+-heading
+-subtitle
+-image
+-ctaLink (Multi URLs)
+
+Features
+-title
+-description
+-icon
+
+Manuals (manuals)
+-title
+-description
+-manualsUrl
+
+Tab Content Block (tabContentBlock)
+- Block List (Có thể chọn nhiều Elemement Types: Features, Manuals,..)
+
+
 Tailwind CSS
 -css
 --peter.css (CSS của mình)
