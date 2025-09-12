@@ -1,0 +1,113 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using Umbraco.Extensions
+@inject IPublishedValueFallback PublishedValueFallback
+
+@{
+    var homePage = Umbraco.ContentAtRoot()?.FirstOrDefault(x => x.ContentType.Alias == "homepage");
+    var menuItems = homePage?.Children()
+        .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
+        .ToArray();
+}
+<nav class="hidden md:flex items-center space-x-6">
+    @if (menuItems?.Any() == true)
+    {
+        <ul class="flex space-x-6">
+            @foreach (var item in menuItems)
+            {
+                var isActive = IsActive(item);
+                <li class="group relative">
+                    <a href="@item.Url()" class="text-slogan transition-colors font-medium @(isActive ? "text-primary" : "hover:text-primary")">
+                        @item.Name
+                    </a>
+                    @await Html.PartialAsync("Partials/Shared/SubMenu", item)
+                </li>
+            }
+        </ul>
+    }
+</nav>
+<!-- Mobile Navigation - Dark Mode -->
+<nav class="md:hidden bg-dark text-slogan">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+        <div class="text-lg font-semibold">Menu</div>
+        <button type="button" class="mobile-menu-button text-slogan focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="mobile-menu hidden px-4 py-2">
+        @if (menuItems?.Any() == true)
+        {
+            <ul class="space-y-2">
+                @foreach (var item in menuItems)
+                {
+                    var isActive = IsActive(item);
+                    var children = item.Children()
+                        .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
+                        .ToArray();
+
+                    <li>
+                        <div class="flex justify-between items-center">
+                            <a href="@item.Url()" class="block font-medium px-2 py-2 rounded transition-colors @(isActive ? "text-primary" : "hover:text-primary")">
+                                @item.Name
+                            </a>
+                            @if (children.Any())
+                            {
+                                <button type="button" class="submenu-toggle text-slogan focus:outline-none" data-target="submenu-@item.Id">
+                                    <svg class="w-4 h-4 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            }
+                        </div>
+
+                        @if (children.Any())
+                        {
+                            <ul id="submenu-@item.Id" class="hidden ml-4 mt-2 space-y-1 transition-all duration-300 ease-out">
+                                @foreach (var child in children)
+                                {
+                                    var isChildActive = IsActive(child);
+                                    <li>
+                                        <a href="@child.Url()" class="block px-2 py-1 rounded text-sm transition-colors @(isChildActive ? "text-primary" : "hover:text-primary")">
+                                            @child.Name
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</nav>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const menuBtn = document.querySelector(".mobile-menu-button");
+        const menu = document.querySelector(".mobile-menu");
+        menuBtn?.addEventListener("click", () => {
+            menu?.classList.toggle("hidden");
+        });
+
+        const toggles = document.querySelectorAll(".submenu-toggle");
+        toggles.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const targetId = btn.getAttribute("data-target");
+                const submenu = document.getElementById(targetId);
+                const icon = btn.querySelector("svg");
+                submenu?.classList.toggle("hidden");
+                icon?.classList.toggle("rotate-180");
+            });
+        });
+    });
+</script>
+@functions {
+    public bool IsActive(IPublishedContent item)
+    {
+        if (item == null) return false;
+        return Model.Path?.Split(',').Contains(item.Id.ToString()) ?? false;
+    }
+}

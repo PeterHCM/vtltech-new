@@ -1,7 +1,6 @@
 @using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Extensions
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
-
 @{
     Layout = null;
     var settings = Umbraco.ContentAtRoot().FirstOrDefault(x => x.ContentType.Alias == "companySettings");
@@ -12,25 +11,19 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(settings?.Value("defaultMetaTitle") ?? "VTL Technologies")</title>
+    <title>@(settings?.Value("defaultMetaTitle") ?? "VTL Tech. Co., Ltd.")</title>
     <meta name="description" content="@(settings?.Value("defaultMetaDescription") ?? "Website công nghệ IoT & tự động hóa")" />
-
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="~/css/site.css" />
-
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="bg-white text-gray-800 font-sans">
-
+<body class="bg-dark text-slogan font-sans">
     @await Html.PartialAsync("Partials/Shared/Topbar", settings)
     @await Html.PartialAsync("Partials/Shared/Header", settings)
-
     <main class="py-10 px-6 md:px-12 lg:px-24">
         @RenderBody()
     </main>
-
     @await Html.PartialAsync("Partials/Shared/Footer", settings)
-
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

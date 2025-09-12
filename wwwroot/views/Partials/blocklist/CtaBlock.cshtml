@@ -1,0 +1,37 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockListItem>
+@using Umbraco.Cms.Web.Common.PublishedModels
+@using Umbraco.Extensions
+
+@{
+    var content = Model.Content as CtaBlock;
+    var title = content?.Title;
+    var introText = content?.IntroText;
+    var buttonText = content?.ButtonText;
+    var ctaLinks = content?.ButtonLink;
+    var ctaUrl = ctaLinks != null && ctaLinks.Any() ? ctaLinks.First().Url : null;
+}
+
+@if (content != null)
+{
+    <section class="bg-dark text-slogan py-18 px-6 shadow-3xl">
+        <div class="max-w-4xl mx-auto text-center">
+            @if (!string.IsNullOrWhiteSpace(title))
+            {
+                <h2 class="text-3xl font-bold text-primary mb-4">@title</h2>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(introText))
+            {
+                <p class="text-lg mb-6">@introText</p>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(ctaUrl) && !string.IsNullOrWhiteSpace(buttonText))
+            {
+                <a href="@ctaUrl"
+                   class="inline-block bg-primary text-white px-6 py-3 rounded hover:bg-secondary transition">
+                    @buttonText
+                </a>
+            }
+        </div>
+    </section>
+}

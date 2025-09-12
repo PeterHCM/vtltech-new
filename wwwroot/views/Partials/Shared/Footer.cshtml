@@ -1,95 +1,104 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
-@using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
 
 @{
-    var settings = Model;
-    var companyName = settings?.Value<string>("companyName");
-    var companyDescription = settings?.Value<string>("companyDescription");
-    var websiteLogo = settings?.Value<IPublishedContent>("websiteLogoLight");
-    var facebookUrl = settings?.Value<string>("facebookUrl");
-    var youtubeUrl = settings?.Value<string>("youtubeUrl");
-    var workingHours = settings?.Value<string>("workingHours");
-    var copyrightText = settings?.Value<string>("copyright");
-
-    // Tạm thời gán URL trang hiện tại là "/"
+    var companyName = Model.Value<string>("companyName");
+    var companyDescription = Model.Value<string>("companyDescription");
+    var websiteLogo = Model.Value<IPublishedContent>("websiteLogoLight");
+    var facebook = Model.Value<IEnumerable<Link>>("facebookUrl")?.FirstOrDefault()?.Url;
+    var youtube = Model.Value<IEnumerable<Link>>("youtubeUrl")?.FirstOrDefault()?.Url;
+    var zalo = Model.Value<IEnumerable<Link>>("zaloUrl")?.FirstOrDefault()?.Url;
+    var workingHours = Model.Value<string>("workingHours");
+    var slogan = Model.Value<string>("companySlogan");
+    var footerLinksName = Model.Value<string>("footerLinksName");
+    var links = Model.Value<IEnumerable<Link>>("footerLinks");
+    var copyrightText = Model.Value<string>("copyright");
+    var contactUs = Model.Value<string>("contactUs");
+    var followUs = Model.Value<string>("followUs");
     var currentUrl = "https://vtltech.com.vn";
-    var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=" + currentUrl;
+    var qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={currentUrl}";
 }
-<footer class="bg-brand-gray-dark text-white px-6 md:px-12 lg:px-24 py-12">
-    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
 
+<footer class="bg-dark text-slogan py-12">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Cột 1: Thông tin công ty -->
-        <div>
-            <h3 class="text-lg font-semibold mb-4 text-brand-primary-orange">Công Ty TNHH Kỹ Thuật Việt Thắng Lợi</h3>
-
+        <div class="flex flex-col items-start gap-4">
             @if (websiteLogo != null)
             {
-                <img src="@websiteLogo.Url()" alt="@companyName logo" class="h-10 mb-4">
+                <img src="@websiteLogo.Url()" alt="@companyName logo" class="h-12 w-auto" />
             }
-
-            @if (!string.IsNullOrEmpty(companyDescription))
-            {
-                <p class="text-sm text-brand-gray-light mb-4">@companyDescription</p>
-            }
-
-            <div class="flex gap-4">
-                @if (!string.IsNullOrEmpty(facebookUrl))
-                {
-                    <a href="@facebookUrl" target="_blank" aria-label="Facebook"
-                       class="text-brand-gray-light hover:text-brand-primary-orange transition">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">...</svg>
-                    </a>
-                }
-                @if (!string.IsNullOrEmpty(youtubeUrl))
-                {
-                    <a href="@youtubeUrl" target="_blank" aria-label="YouTube"
-                       class="text-brand-gray-light hover:text-brand-primary-orange transition">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">...</svg>
-                    </a>
-                }
-            </div>
+            <h2 class="font-bold text-xl">@companyName</h2>
+            <p class="text-sm">@slogan</p>
+            <p class="text-sm text-gray-400 text-justify">@companyDescription</p>
         </div>
 
-        <!-- Cột 2: Giờ làm việc + QR -->
+        <!-- Cột 2: Liên kết -->
         <div>
-            <h3 class="text-lg font-semibold mb-4 text-brand-primary-orange">Giờ làm việc</h3>
-
-            @if (!string.IsNullOrEmpty(workingHours))
+            <h3 class="font-semibold text-lg mb-4">@footerLinksName</h3>
+            @if (links != null && links.Any())
             {
-                <div class="text-sm text-brand-gray-light whitespace-pre-line mb-4">
-                    @Html.Raw(workingHours)
+                <ul class="space-y-2">
+                    @foreach (var link in links)
+                    {
+                        var url = link.Url;
+                        var name = link.Name;
+                        var target = link.Target; // "_blank", "_self", etc.
+
+                        <li  class="hover:text-primary transition-colors">
+                            <a href="@url" target="@target">@name</a>
+                        </li>
+                    }
+                </ul>
+            }                
+        </div>
+        <!-- Cột 3: Thông tin liên hệ + QR + Mạng xã hội -->
+        <div>
+            <h3 class="font-semibold text-lg mb-4">@contactUs</h3>
+            <div class="space-y-2 text-sm text-gray-400 text-justify">
+                <p>@workingHours</p>
+            </div>
+
+            <div class="flex items-center gap-4 mt-6">
+                @if (!string.IsNullOrEmpty(qrUrl))
+                {
+                    <img src="@qrUrl" alt="QR Code" class="h-20 w-20" />
+                }
+
+                <div class="flex flex-col gap-2">
+                    <h4 class="font-medium text-lg text-slogan">@followUs</h4>
+                    <div class="flex gap-2">
+                        @if (!string.IsNullOrWhiteSpace(facebook))
+                        {
+                            <a href="@facebook" target="_blank" aria-label="Facebook" class="text-slogan hover:text-primary transition-colors">
+                                <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.505 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.44 2.89h-2.333v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(youtube))
+                        {
+                            <a href="@youtube" target="_blank" aria-label="YouTube" class="text-slogan hover:text-primary transition-colors">
+                                <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M19.825 8.351a1.272 1.272 0 00-.916-.916C17.758 7 12 7 12 7S6.242 7 5.091 7.435a1.272 1.272 0 00-.916.916C4 9.563 4 12 4 12s0 2.437.175 3.649a1.272 1.272 0 00.916.916C6.242 17 12 17 12 17s5.758 0 6.909-.435a1.272 1.272 0 00.916-.916C20 14.437 20 12 20 12s0-2.437-.175-3.649zM9.998 14.072l5.002-2.071-5.002-2.071v4.142z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(zalo))
+                        {
+                            <a href="@zalo" target="_blank" aria-label="Zalo" class="text-slogan hover:text-primary transition-colors">
+                                <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zM9.547 16.594c-.221.231-.577.23-.797 0-.22-.23-.22-.604 0-.834l.797-.834c.148-.155.353-.24.577-.24h1.79c.22 0 .426.085.574.24l.797.834c.22.23.22.603 0 .834-.22.23-.576.23-.797 0l-1.492-1.554-.798.834h-.002z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        }
+                    </div>
                 </div>
-            }
-
-            <div class="mt-2">
-                <img src="@qrUrl" alt="QR Code" class="h-24 w-24 rounded bg-white p-1">
-                <p class="text-xs mt-2 text-brand-gray-light text-center">Quét để mở trang hiện tại</p>
             </div>
-        </div>
-
-        <!-- Cột 3: Điều hướng -->
-        <div>
-            <h3 class="text-lg font-semibold mb-4 text-brand-primary-orange">Điều hướng</h3>
-            <ul class="space-y-2 text-sm text-brand-gray-light">
-                <li><a href="/ve-chung-toi" class="hover:text-brand-primary-orange transition">Về chúng tôi</a></li>
-                <li><a href="/dich-vu" class="hover:text-brand-primary-orange transition">Dịch vụ</a></li>
-                <li><a href="/blog" class="hover:text-brand-primary-orange transition">Tin tức & Blog</a></li>
-                <li><a href="/lien-he" class="hover:text-brand-primary-orange transition">Liên hệ</a></li>
-            </ul>
         </div>
     </div>
 
-    <hr class="border-brand-gray-light/30 my-2">
-
-    <div class="text-center text-sm text-brand-gray-light mt-4">
-        @if (!string.IsNullOrEmpty(copyrightText))
-        {
-            @copyrightText
-        }
-        else
-        {
-            <span>&copy; @DateTime.Now.Year @companyName. All Rights Reserved.</span>
-        }
+    <div class="max-w-7xl mx-auto px-6 mt-12 pt-6 border-t border-gray-700 text-center text-xs text-gray-500">
+        <p>@copyrightText</p>
     </div>
 </footer>
