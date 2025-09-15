@@ -1,0 +1,76 @@
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models.PublishedContent
+@inherits UmbracoViewPage<BlockListItem>
+
+@{
+    var themeObj = ViewData["Theme"];
+    var bgClass = ThemeValue(themeObj, "BgClass", "bg-white");
+    var textClass = ThemeValue(themeObj, "TextClass", "text-gray-800");
+    var accentClass = ThemeValue(themeObj, "AccentClass", "text-primary");
+    var subBgClass = ThemeValue(themeObj, "SubBgClass", "bg-gray-100");
+    var shadowClass = ThemeValue(themeObj, "ShadowClass", "shadow-xl");
+    var headingClass = ThemeValue(themeObj, "HeadingClass", "text-primary");
+    var mutedTextClass = ThemeValue(themeObj, "MutedTextClass", "text-gray-600");
+    var emptyImageBgClass = ThemeValue(themeObj, "EmptyImageBgClass", "bg-gray-200");
+    var emptyImageTextClass = ThemeValue(themeObj, "EmptyImageTextClass", "text-gray-600 italic");
+
+    var content = Model.Content;
+    var title = content.Value<string>("title");
+    var cards = content.Value<BlockListModel>("cards");
+}
+
+<section class="py-12 @bgClass">
+    <div class="container mx-auto px-4">
+        @if (!string.IsNullOrWhiteSpace(title))
+        {
+            <h2 class="text-3xl font-bold mb-8 @headingClass">@title</h2>
+        }
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            @foreach (var card in cards ?? Enumerable.Empty<BlockListItem>())
+            {
+                var cardContent = card.Content;
+
+                var cardTitle = cardContent.Value<string>("title");
+                var cardDescription = cardContent.Value<string>("description");
+
+                var iconMedia = cardContent.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault();
+                var iconUrl = iconMedia?.Url();
+
+                var imageMedia = cardContent.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault();
+                var imageUrl = imageMedia?.Url();
+
+                <div class="@subBgClass @shadowClass rounded-lg overflow-hidden">
+                    @if (!string.IsNullOrEmpty(imageUrl))
+                    {
+                        <img src="@imageUrl" alt="@cardTitle" class="w-full h-48 object-cover" />
+                    }
+                    else
+                    {
+                        <div class="w-full h-48 @emptyImageBgClass flex items-center justify-center text-sm @emptyImageTextClass">
+                            Chưa có ảnh
+                        </div>
+                    }
+
+                    <div class="p-6">
+                        <div class="flex items-center gap-2 mb-2">
+                            @if (!string.IsNullOrEmpty(iconUrl))
+                            {
+                                <img src="@iconUrl" alt="icon" class="w-6 h-6" />
+                            }
+                            <h3 class="text-xl font-semibold @accentClass">@cardTitle</h3>
+                        </div>
+                        <p class="text-sm line-clamp-3 @mutedTextClass">@cardDescription</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@functions {
+    public string ThemeValue(object theme, string key, string fallback)
+    {
+        return theme?.GetType().GetProperty(key)?.GetValue(theme)?.ToString() ?? fallback;
+    }
+}

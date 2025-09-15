@@ -1,11 +1,18 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Extensions
+
 @{
+    var themeObj = ViewData["Theme"];
+    var bgClass = ThemeValue(themeObj, "BgClass", "bg-white");
+    var textClass = ThemeValue(themeObj, "TextClass", "text-gray-800");
+    var shadowClass = ThemeValue(themeObj, "ShadowClass", "shadow-md");
+
     var companyName = Model.Value<string>("companyName");
     var websiteLogo = Model.Value<IPublishedContent>("websiteLogoLight");
 }
-<header class="bg-dark text-slogan py-4 px-6 flex justify-between items-center sticky top-0 z-50">
+
+<header class="@bgClass @textClass @shadowClass py-4 px-6 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center">
         @if (websiteLogo != null)
         {
@@ -16,3 +23,10 @@
     </div>
     @await Html.PartialAsync("Partials/Shared/Navigation")
 </header>
+
+@functions {
+    public string ThemeValue(object theme, string key, string fallback)
+    {
+        return theme?.GetType().GetProperty(key)?.GetValue(theme)?.ToString() ?? fallback;
+    }
+}

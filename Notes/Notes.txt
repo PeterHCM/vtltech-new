@@ -22,6 +22,7 @@ Company Settings (Alias: companySettings)
 - companyEmail
 - websiteLogo
 - websiteLogoLight
+- companySlogan
 - facebookUrl
 - messengerUrl
 - youtubeUrl
@@ -65,7 +66,7 @@ Text Block (textBlock)
 
 CTA Block (Alias: ctaBlock)
 -title
--description
+-introText
 -buttonText
 -buttonLink
 Hero Banner (Alias: heroBanner)

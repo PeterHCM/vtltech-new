@@ -1,0 +1,35 @@
+@using Umbraco.Cms.Web.Common.PublishedModels
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Extensions
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IntranetHomePage>
+
+@{
+    Layout = "intranet.cshtml";
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
+    var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "heroBanner", "Partials/blocklist/heroBanner" },
+        { "textBlock", "Partials/blocklist/textBlock" },
+        { "ctaBlock", "Partials/blocklist/ctaBlock" }     
+    };
+}
+<section class="homepage">
+    <div class="container">
+        @if (blocks?.Any() == true)
+        {
+            foreach (var block in blocks)
+            {
+                var alias = block.Content.ContentType.Alias;
+
+                if (blockViewMap.TryGetValue(alias, out var partialPath))
+                {
+                    @await Html.PartialAsync(partialPath, block)
+                }
+                else
+                {
+                    <p class="text-red-500">Không tìm thấy view cho block: <strong>@alias</strong></p>
+                }
+            }
+        }
+    </div>
+</section>

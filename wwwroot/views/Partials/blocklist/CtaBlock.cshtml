@@ -3,6 +3,16 @@
 @using Umbraco.Extensions
 
 @{
+    var themeObj = ViewData["Theme"];
+    var bgClass = ThemeValue(themeObj, "BgClass", "bg-white");
+    var textClass = ThemeValue(themeObj, "TextClass", "text-gray-800");
+    var headingClass = ThemeValue(themeObj, "HeadingClass", "text-primary");
+    var mutedTextClass = ThemeValue(themeObj, "MutedTextClass", "text-gray-600");
+    var buttonBgClass = ThemeValue(themeObj, "ButtonBgClass", "bg-primary");
+    var buttonTextClass = ThemeValue(themeObj, "ButtonTextClass", "text-white");
+    var buttonHoverClass = ThemeValue(themeObj, "ButtonHoverClass", "hover:bg-secondary");
+    var shadowClass = ThemeValue(themeObj, "ShadowClass", "shadow-xl");
+
     var content = Model.Content as CtaBlock;
     var title = content?.Title;
     var introText = content?.IntroText;
@@ -13,25 +23,32 @@
 
 @if (content != null)
 {
-    <section class="bg-dark text-slogan py-18 px-6 shadow-3xl">
+    <section class="@bgClass @textClass py-18 px-6 @shadowClass">
         <div class="max-w-4xl mx-auto text-center">
             @if (!string.IsNullOrWhiteSpace(title))
             {
-                <h2 class="text-3xl font-bold text-primary mb-4">@title</h2>
+                <h2 class="text-3xl font-bold mb-4 @headingClass">@title</h2>
             }
 
             @if (!string.IsNullOrWhiteSpace(introText))
             {
-                <p class="text-lg mb-6">@introText</p>
+                <p class="text-lg mb-6 @mutedTextClass">@introText</p>
             }
 
             @if (!string.IsNullOrWhiteSpace(ctaUrl) && !string.IsNullOrWhiteSpace(buttonText))
             {
                 <a href="@ctaUrl"
-                   class="inline-block bg-primary text-white px-6 py-3 rounded hover:bg-secondary transition">
+                   class="inline-block @buttonBgClass @buttonTextClass px-6 py-3 rounded @buttonHoverClass transition">
                     @buttonText
                 </a>
             }
         </div>
     </section>
+}
+
+@functions {
+    public string ThemeValue(object theme, string key, string fallback)
+    {
+        return theme?.GetType().GetProperty(key)?.GetValue(theme)?.ToString() ?? fallback;
+    }
 }

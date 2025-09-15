@@ -1,21 +1,35 @@
-@using Umbraco.Cms.Web.Common.PublishedModels;
-@using Umbraco.Cms.Core.Models.Blocks;
-@using Umbraco.Cms.Web.Common.Views;
+@using Umbraco.Cms.Web.Common.PublishedModels
+@using Umbraco.Cms.Core.Models.Blocks
 @inherits UmbracoViewPage<Homepage>
 
 @{
-    Layout = "_Layout.cshtml";
-}
+    Layout = "layout.cshtml";
 
-@* Sử dụng alias để lấy giá trị *@
-@{
-    ViewData["Title"] = Model.Value("metaTitle");
-}
-
-<div class="homepage-content">
-    @* Tên trong code phải khớp chính xác với alias *@
-    @if (Model.ContentBlocks != null && Model.ContentBlocks.Any())
+    var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
-        @await Html.GetBlockListHtmlAsync(Model.ContentBlocks)
-    }
-</div>
+        { "heroBanner", "Partials/blocklist/heroBanner" },
+        { "textBlock", "Partials/blocklist/textBlock" },
+        { "ctaBlock", "Partials/blocklist/ctaBlock" },
+        { "featuredContentBlock", "Partials/blocklist/featuredContentBlock" }
+    };
+
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
+}
+
+<section class="homepage">
+    <div class="container">
+        @foreach (var block in blocks ?? Enumerable.Empty<BlockListItem>())
+        {
+            var alias = block.Content.ContentType.Alias;
+
+            if (blockViewMap.TryGetValue(alias, out var partialPath))
+            {
+                @await Html.PartialAsync(partialPath, block)
+            }
+            else
+            {
+                <p class="text-red-500">Không tìm thấy view cho block: <strong>@alias</strong></p>
+            }
+        }
+    </div>
+</section>

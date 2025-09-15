@@ -3,6 +3,13 @@
 @inject IPublishedValueFallback PublishedValueFallback
 
 @{
+    var themeObj = ViewData["Theme"];
+    var bgClass = ThemeValue(themeObj, "BgClass", "bg-white");
+    var textClass = ThemeValue(themeObj, "TextClass", "text-gray-800");
+    var accentClass = ThemeValue(themeObj, "AccentClass", "text-primary");
+    var borderClass = ThemeValue(themeObj, "BorderClass", "border-gray-300");
+    var shadowClass = ThemeValue(themeObj, "ShadowClass", "shadow-xl");
+
     var children = Model.Children()
         .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
         .ToArray();
@@ -10,7 +17,7 @@
 
 @if (children.Any())
 {
-    <ul class="absolute top-full left-0 mt-[2px] min-w-[180px] bg-dark border border-gray-700 rounded-lg shadow-xl z-50
+    <ul class="absolute top-full left-0 mt-[2px] min-w-[180px] @bgClass @borderClass border rounded-lg @shadowClass z-50
                transform scale-y-0 opacity-0 invisible origin-top transition-all duration-300 ease-out
                group-hover:scale-y-100 group-hover:opacity-100 group-hover:visible">
         @foreach (var child in children)
@@ -20,15 +27,15 @@
                 .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
                 .ToArray();
 
-            <li class="group relative">
+            <li class="group relative @textClass">
                 <div class="flex items-center justify-between px-4 py-2">
-                    <a href="@child.Url()" class="transition-colors @(isActive ? "text-primary font-semibold underline" : "hover:text-primary")">
+                    <a href="@child.Url()" class="transition-colors @(isActive ? accentClass + " font-semibold underline" : "hover:" + accentClass)">
                         @child.Name
                     </a>
 
                     @if (grandChildren.Any())
                     {
-                        <svg class="w-4 h-4 ml-2 transform transition-transform duration-300 ease-out group-hover:rotate-90 text-slogan"
+                        <svg class="w-4 h-4 ml-2 transform transition-transform duration-300 ease-out group-hover:rotate-90 @textClass"
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M9 5l7 7-7 7"/>
@@ -38,14 +45,14 @@
 
                 @if (grandChildren.Any())
                 {
-                    <ul class="absolute top-0 left-full mt-[2px] min-w-[180px] bg-dark border border-gray-700 rounded-lg shadow-xl z-50
+                    <ul class="absolute top-0 left-full mt-[2px] min-w-[180px] @bgClass @borderClass border rounded-lg @shadowClass z-50
                                transform -translate-x-4 opacity-0 invisible transition-all duration-300 delay-100 ease-out
                                group-hover:translate-x-0 group-hover:opacity-100 group-hover:visible">
                         @foreach (var grandChild in grandChildren)
                         {
                             var isGrandActive = Model.Path?.Split(',')?.Contains(grandChild.Id.ToString()) ?? false;
                             <li>
-                                <a href="@grandChild.Url()" class="block px-4 py-2 text-sm transition-colors @(isGrandActive ? "text-primary font-semibold underline" : "hover:text-primary")">
+                                <a href="@grandChild.Url()" class="block px-4 py-2 text-sm transition-colors @(isGrandActive ? accentClass + " font-semibold underline" : "hover:" + accentClass)">
                                     @grandChild.Name
                                 </a>
                             </li>
@@ -55,4 +62,11 @@
             </li>
         }
     </ul>
+}
+
+@functions {
+    public string ThemeValue(object theme, string key, string fallback)
+    {
+        return theme?.GetType().GetProperty(key)?.GetValue(theme)?.ToString() ?? fallback;
+    }
 }
