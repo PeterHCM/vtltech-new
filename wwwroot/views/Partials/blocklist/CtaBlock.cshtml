@@ -3,52 +3,34 @@
 @using Umbraco.Extensions
 
 @{
-    var themeObj = ViewData["Theme"];
-    var bgClass = ThemeValue(themeObj, "BgClass", "bg-white");
-    var textClass = ThemeValue(themeObj, "TextClass", "text-gray-800");
-    var headingClass = ThemeValue(themeObj, "HeadingClass", "text-primary");
-    var mutedTextClass = ThemeValue(themeObj, "MutedTextClass", "text-gray-600");
-    var buttonBgClass = ThemeValue(themeObj, "ButtonBgClass", "bg-primary");
-    var buttonTextClass = ThemeValue(themeObj, "ButtonTextClass", "text-white");
-    var buttonHoverClass = ThemeValue(themeObj, "ButtonHoverClass", "hover:bg-secondary");
-    var shadowClass = ThemeValue(themeObj, "ShadowClass", "shadow-xl");
-
     var content = Model.Content as CtaBlock;
     var title = content?.Title;
     var introText = content?.IntroText;
     var buttonText = content?.ButtonText;
-    var ctaLinks = content?.ButtonLink;
-    var ctaUrl = ctaLinks != null && ctaLinks.Any() ? ctaLinks.First().Url : null;
+    var ctaUrl = content?.ButtonLink?.FirstOrDefault()?.Url;
 }
 
 @if (content != null)
 {
-    <section class="@bgClass @textClass py-18 px-6 @shadowClass">
+    <section class="bg-white text-gray-800 dark:bg-dark dark:text-slogan py-18 px-6 shadow-xl">
         <div class="max-w-4xl mx-auto text-center">
             @if (!string.IsNullOrWhiteSpace(title))
             {
-                <h2 class="text-3xl font-bold mb-4 @headingClass">@title</h2>
+                <h2 class="text-3xl font-bold mb-4 text-primary">@title</h2>
             }
 
             @if (!string.IsNullOrWhiteSpace(introText))
             {
-                <p class="text-lg mb-6 @mutedTextClass">@introText</p>
+                <p class="text-lg mb-6 text-gray-600 dark:text-gray-400">@introText</p>
             }
 
             @if (!string.IsNullOrWhiteSpace(ctaUrl) && !string.IsNullOrWhiteSpace(buttonText))
             {
                 <a href="@ctaUrl"
-                   class="inline-block @buttonBgClass @buttonTextClass px-6 py-3 rounded @buttonHoverClass transition">
+                   class="inline-block bg-primary text-white px-6 py-3 rounded hover:bg-secondary transition">
                     @buttonText
                 </a>
             }
         </div>
     </section>
-}
-
-@functions {
-    public string ThemeValue(object theme, string key, string fallback)
-    {
-        return theme?.GetType().GetProperty(key)?.GetValue(theme)?.ToString() ?? fallback;
-    }
 }

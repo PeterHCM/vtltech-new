@@ -1,0 +1,86 @@
+@inherits UmbracoViewPage<BlockListItem>
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var content = Model.Content;
+    var menuTitle = content.Value<string>("title");
+    var documentTypeSelected = content.Value<string>("documentType");
+    var departmentSelected = content.Value<string>("derpartment");
+    var selectAll = content.Value<bool>("selectAll");
+
+    var allCompanyDocuments = Umbraco.ContentAtRoot()
+        .SelectMany(x => x.DescendantsOfType("companyDocument"))
+        .ToList();
+
+    var index = 1;
+
+    var groupedDocs = allCompanyDocuments
+        .GroupBy(doc => doc.Value<string>("documentType"))
+        .ToDictionary(
+            g => g.Key,
+            g => g.GroupBy(doc => doc.Value<string>("departments"))
+        );
+}
+@if (!string.IsNullOrWhiteSpace(menuTitle))
+{
+    <h2 class="text-2xl md:text-3xl font-bold mb-6 text-primary dark:text-primary-light">
+        @menuTitle
+    </h2>
+}
+
+@if (selectAll && groupedDocs.Any())
+{
+    <div class="space-y-10 py-8 px-4 md:px-6">
+        @foreach (var docTypeGroup in groupedDocs)
+        {
+            <section class="space-y-6">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    Loại tài liệu: @docTypeGroup.Key
+                </h2>
+
+                @foreach (var deptGroup in docTypeGroup.Value)
+                {
+                    <div class="space-y-4 pl-2 md:pl-4">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                            Phòng ban: @deptGroup.Key
+                        </h3>
+
+                        <ul class="space-y-4">
+                            @foreach (var doc in deptGroup)
+                            {
+                                var url = doc?.Url() ?? "#";
+                                var title = doc.Value<string>("title");
+                                var documentId = doc.Value<string>("documentId");
+                                var revision = doc.Value<string>("revision");
+                                var publicationDate = doc.Value<DateTime>("publicationDate").ToString("dd/MM/yyyy");
+                                var lastRevisedDate = doc.Value<DateTime>("lastRevisedDate").ToString("dd/MM/yyyy");
+
+                                <li>
+                                    <article class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm text-gray-900 dark:text-gray-100">
+                                        <h4 class="text-base md:text-lg font-semibold mb-2">
+                                            <a href="@url" class="hover:text-primary text-secondary dark:text-secondary">@index. @title</a>
+                                        </h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm leading-relaxed">
+                                            <div>
+                                                <p><span class="font-medium">Mã tài liệu:</span> @documentId</p>
+                                                <p><span class="font-medium">Phiên bản:</span> @revision</p>
+                                                <p><span class="font-medium">Ngày ban hành:</span> @publicationDate</p>
+                                            </div>
+                                            <div>
+                                                <p><span class="font-medium">Ngày sửa đổi:</span> @lastRevisedDate</p>
+                                                <p><span class="font-medium">Phòng ban:</span> @deptGroup.Key</p>
+                                                <p><span class="font-medium">Loại tài liệu:</span> @docTypeGroup.Key</p>
+                                            </div>
+                                        </div>
+                                    </article>
+                                </li>
+
+                                index++;
+                            }
+                        </ul>
+                    </div>
+                }
+            </section>
+        }
+    </div>
+}

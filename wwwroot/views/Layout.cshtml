@@ -4,49 +4,39 @@
 
 @{
     Layout = null;
-
     var settings = Umbraco.ContentAtRoot().FirstOrDefault(x => x.ContentType.Alias == "companySettings");
-    var isDarkMode = settings?.Value<bool>("themeToggle") ?? true;    
-    var theme = new {
-        IsDarkMode = isDarkMode,
-        PageClass = isDarkMode ? "bg-dark text-slogan" : "bg-white text-gray-800",
-        TextClass = isDarkMode ? "text-slogan" : "text-gray-800",
-        BgClass = isDarkMode ? "bg-dark" : "bg-white",
-        SubBgClass = isDarkMode ? "bg-neutral-900" : "bg-gray-100",
-        BorderClass = isDarkMode ? "border-gray-700" : "border-gray-300",
-        LinkClass = isDarkMode ? "text-slogan hover:text-primary" : "text-gray-800 hover:text-primary",
-        AccentClass = isDarkMode ? "text-primary" : "text-primary",
-        ButtonBgClass = "bg-primary",
-        ButtonTextClass = "text-white",
-        ButtonHoverClass = "hover:bg-secondary",
-        HeadingClass = "text-primary",
-        MutedTextClass = isDarkMode ? "text-gray-400" : "text-gray-600",
-        ProseClass = isDarkMode ? "prose prose-invert" : "prose",
-        ShadowClass = "shadow-xl",
-        CardClass = isDarkMode ? "bg-neutral-900 border-gray-700" : "bg-white border-gray-200",
-        DisabledClass = "opacity-50 cursor-not-allowed"
-    };
-    ViewData["Theme"] = theme;
-    ViewData["Settings"] = settings;
+    
+    // Kiểm tra null để tránh lỗi.
+    if (settings == null)
+    {
+        // Có thể hiển thị một thông báo lỗi hoặc một trang trống
+        <p>Lỗi: Không tìm thấy cài đặt công ty.</p>
+        return;
+    }
+
+    var companyName = settings.Value<string>("companyName") ?? "Viet Thang Loi Technology Company Limited";
+    var pageTitle = $"{Model.Name} | {companyName}";
+    var pageDescription = settings.Value<string>("defaultMetaDescription") ?? "Viet Thang Loi Technology Company Limited";
 }
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(settings?.Value("defaultMetaTitle") ?? "VTL Technologies")</title>
-    <meta name="description" content="@(settings?.Value("defaultMetaDescription") ?? "Website công nghệ IoT & tự động hóa")" />
+    <title>@pageTitle</title>
+    <meta name="description" content="@pageDescription" />
     <link rel="stylesheet" href="~/css/site.css" />
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="@theme.PageClass font-sans">
+<body class="bg-white text-gray-800 dark:bg-dark dark:text-slogan font-sans">
     @await Html.PartialAsync("Partials/Shared/Topbar")
     @await Html.PartialAsync("Partials/Shared/Header")
-    <main class="py-10 px-6 md:px-12 lg:px-24">
+    <main class="pb-10">
         @RenderBody()
     </main>
     @await Html.PartialAsync("Partials/Shared/Footer", settings)
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/Scripts/site.js" asp-append-version="true"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

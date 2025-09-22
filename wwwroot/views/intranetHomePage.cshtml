@@ -5,30 +5,31 @@
 
 @{
     Layout = "intranet.cshtml";
-    var blocks = Model.Value<BlockListModel>("contentBlocks");
+
     var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { "heroBanner", "Partials/blocklist/heroBanner" },
         { "textBlock", "Partials/blocklist/textBlock" },
-        { "ctaBlock", "Partials/blocklist/ctaBlock" }     
+        { "ctaBlock", "Partials/blocklist/ctaBlock" }, 
+        { "imageBlock", "Partials/blocklist/imageBlock" }
     };
+
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
 }
+
 <section class="homepage">
     <div class="container">
-        @if (blocks?.Any() == true)
+        @foreach (var block in blocks ?? Enumerable.Empty<BlockListItem>())
         {
-            foreach (var block in blocks)
-            {
-                var alias = block.Content.ContentType.Alias;
+            var alias = block.Content.ContentType.Alias;
 
-                if (blockViewMap.TryGetValue(alias, out var partialPath))
-                {
-                    @await Html.PartialAsync(partialPath, block)
-                }
-                else
-                {
-                    <p class="text-red-500">Không tìm thấy view cho block: <strong>@alias</strong></p>
-                }
+            if (blockViewMap.TryGetValue(alias, out var partialPath))
+            {
+                @await Html.PartialAsync(partialPath, block)
+            }
+            else
+            {
+                <p class="text-red-500">Không tìm thấy view cho block: <strong>@alias</strong></p>
             }
         }
     </div>

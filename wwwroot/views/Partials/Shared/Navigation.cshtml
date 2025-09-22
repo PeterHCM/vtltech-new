@@ -3,20 +3,12 @@
 @inject IPublishedValueFallback PublishedValueFallback
 
 @{
-    var themeObj = ViewData["Theme"];
-    var textClass = ThemeValue(themeObj, "TextClass", "text-gray-800");
-    var accentClass = ThemeValue(themeObj, "AccentClass", "text-primary");
-    var bgClass = ThemeValue(themeObj, "BgClass", "bg-white");
-    var borderClass = ThemeValue(themeObj, "BorderClass", "border-gray-300");
-    var shadowClass = ThemeValue(themeObj, "ShadowClass", "shadow-xl");
-
-    var homePage = Umbraco.ContentAtRoot()?.FirstOrDefault(x => x.ContentType.Alias == "homepage");
+    var homePage = Umbraco.AssignedContentItem?.Root();
     var menuItems = homePage?.Children()
         .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
         .ToArray();
 }
 
-<!-- Desktop Navigation -->
 <nav class="hidden md:flex items-center space-x-6">
     @if (menuItems?.Any() == true)
     {
@@ -24,8 +16,11 @@
             @foreach (var item in menuItems)
             {
                 var isActive = IsActive(item);
+                
                 <li class="group relative">
-                    <a href="@item.Url()" class="@textClass transition-colors font-medium @(isActive ? accentClass : "hover:" + accentClass)">
+                    <a href="@item.Url()" 
+                       class="@(isActive ? "text-primary" : "text-gray-800 dark:text-slogan") 
+                              font-medium transition-colors hover:text-primary dark:hover:text-primary">
                         @item.Name
                     </a>
                     @await Html.PartialAsync("Partials/Shared/SubMenu", item)
@@ -35,11 +30,10 @@
     }
 </nav>
 
-<!-- Mobile Navigation -->
-<nav class="md:hidden @bgClass @textClass @shadowClass">
-    <div class="flex items-center justify-between px-4 py-3 border-b @borderClass">
-        <div class="text-lg font-semibold">Menu</div>
-        <button type="button" class="mobile-menu-button @textClass focus:outline-none">
+<nav class="md:hidden bg-white text-gray-800 dark:bg-dark dark:text-slogan shadow-xl">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-300 dark:border-gray-700">
+        <div class="text-lg font-semibold"></div>
+        <button type="button" class="mobile-menu-button text-gray-800 dark:text-slogan focus:outline-none">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M4 6h16M4 12h16M4 18h16"/>
@@ -60,12 +54,14 @@
 
                     <li>
                         <div class="flex justify-between items-center">
-                            <a href="@item.Url()" class="block font-medium px-2 py-2 rounded transition-colors @(isActive ? accentClass : "hover:" + accentClass)">
+                            <a href="@item.Url()" 
+                               class="block font-medium px-2 py-2 rounded transition-colors 
+                                      @(isActive ? "text-primary" : "text-gray-800 dark:text-slogan hover:text-primary dark:hover:text-primary")">
                                 @item.Name
                             </a>
                             @if (children.Any())
                             {
-                                <button type="button" class="submenu-toggle @textClass focus:outline-none" data-target="submenu-@item.Id">
+                                <button type="button" class="submenu-toggle text-gray-800 dark:text-slogan focus:outline-none" data-target="submenu-@item.Id">
                                     <svg class="w-4 h-4 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                               d="M19 9l-7 7-7-7"/>
@@ -80,8 +76,11 @@
                                 @foreach (var child in children)
                                 {
                                     var isChildActive = IsActive(child);
+                                    
                                     <li>
-                                        <a href="@child.Url()" class="block px-2 py-1 rounded text-sm transition-colors @(isChildActive ? accentClass : "hover:" + accentClass)">
+                                        <a href="@child.Url()" 
+                                           class="block px-2 py-1 rounded text-sm transition-colors 
+                                                  @(isChildActive ? "text-primary" : "text-gray-800 dark:text-slogan hover:text-primary dark:hover:text-primary")">
                                             @child.Name
                                         </a>
                                     </li>
@@ -121,10 +120,5 @@
     {
         if (item == null) return false;
         return Model.Path?.Split(',').Contains(item.Id.ToString()) ?? false;
-    }
-
-    public string ThemeValue(object theme, string key, string fallback)
-    {
-        return theme?.GetType().GetProperty(key)?.GetValue(theme)?.ToString() ?? fallback;
     }
 }

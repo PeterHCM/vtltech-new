@@ -5,22 +5,35 @@
 @{
     Layout = "layout.cshtml";
 
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
+
     var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { "heroBanner", "Partials/blocklist/heroBanner" },
         { "textBlock", "Partials/blocklist/textBlock" },
         { "ctaBlock", "Partials/blocklist/ctaBlock" },
-        { "featuredContentBlock", "Partials/blocklist/featuredContentBlock" }
+        { "featuredContentBlock", "Partials/blocklist/featuredContentBlock" },
+        { "documentControl", "Partials/blocklist/DocumentControl" }
     };
 
-    var blocks = Model.Value<BlockListModel>("contentBlocks");
+    var heroCarouselBlock = blocks?.FirstOrDefault(b => b.Content.ContentType.Alias == "heroCarousel");
 }
 
-<section class="homepage">
+<!-- Hero Carousel Block (render riêng) -->
+@if (heroCarouselBlock != null)
+{
+    @await Html.PartialAsync("Partials/blocklist/heroCarousel", heroCarouselBlock)
+}
+
+<!-- Các block còn lại -->
+<section class="homepage px-6 md:px-12 lg:px-24">
     <div class="container">
         @foreach (var block in blocks ?? Enumerable.Empty<BlockListItem>())
         {
             var alias = block.Content.ContentType.Alias;
+
+            // Bỏ qua heroCarousel vì đã render ở trên
+            if (alias == "heroCarousel") continue;
 
             if (blockViewMap.TryGetValue(alias, out var partialPath))
             {

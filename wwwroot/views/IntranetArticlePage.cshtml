@@ -1,0 +1,35 @@
+@using Umbraco.Cms.Core.Models.Blocks
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IntranetArticlePage>
+
+@{
+    Layout = "intranet.cshtml";
+
+    var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "heroBanner", "Partials/blocklist/heroBanner" },
+        { "textBlock", "Partials/blocklist/textBlock" },
+        { "ctaBlock", "Partials/blocklist/ctaBlock" },
+        { "internalDocument", "Partials/blocklist/internalDocument" },
+        { "imageBlock", "Partials/blocklist/imageBlock" }      
+    };
+
+    var blocks = Model.ContentBlocks;
+}
+
+<section class="intranet-article-page">
+    <div class="container">
+        @foreach (var block in blocks ?? Enumerable.Empty<BlockListItem>())
+        {
+            var alias = block.Content.ContentType.Alias;
+
+            if (blockViewMap.TryGetValue(alias, out var partialPath))
+            {
+                @await Html.PartialAsync(partialPath, block)
+            }
+            else
+            {
+                <p class="text-red-500">Không tìm thấy view cho block: <strong>@alias</strong></p>
+            }
+        }
+    </div>
+</section>

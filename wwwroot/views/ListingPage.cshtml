@@ -1,6 +1,6 @@
-@using Umbraco.Cms.Web.Common.PublishedModels;
-@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Extensions
+@inherits UmbracoViewPage
 @inject IPublishedValueFallback PublishedValueFallback
 
 @{
@@ -11,11 +11,11 @@
         .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
         .ToArray();
 
-    string viewMoreText = Umbraco.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
-    string noContentText = Umbraco.GetDictionaryValue("noContentText") ?? "Không có nội dung để hiển thị.";
+    var viewMoreText = Umbraco.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
+    var noContentText = Umbraco.GetDictionaryValue("noContentText") ?? "Không có nội dung để hiển thị.";
 }
 
-<section class="max-w-5xl mx-auto px-4 py-8">
+<section class="mx-auto py-8">
     <h1 class="text-3xl font-bold text-primary mb-6">@pageTitle</h1>
 
     @if (items.Any())
@@ -26,17 +26,13 @@
                 var title = item.Name;
                 var intro = item.Value<string>("introtext");
 
-                <article class="bg-dark text-slogan p-6 rounded-lg shadow-3xl hover:shadow-xl transition-shadow duration-300">
+                <article class="bg-white border border-gray-200 dark:bg-neutral-900 dark:border-gray-700 p-6 rounded-lg shadow-xl hover:shadow-2xl transition-shadow duration-300">
                     <h2 class="text-xl font-semibold text-primary mb-2">@title</h2>
-
                     @if (!string.IsNullOrWhiteSpace(intro))
                     {
-                        <p class="text-sm text-slogan leading-relaxed line-clamp-3  text-justify">
-                            @intro
-                        </p>
+                        <p class="text-sm text-gray-800 dark:text-slogan leading-relaxed text-justify">@intro</p>
                     }
-
-                    <a href="@item.Url()" class="inline-block mt-4 text-primary hover:underline text-sm font-medium">
+                    <a href="@item.Url()" class="inline-block mt-4 text-gray-800 dark:text-slogan hover:text-primary text-sm font-medium">
                         @viewMoreText
                     </a>
                 </article>
@@ -45,6 +41,6 @@
     }
     else
     {
-        <p class="text-slogan">@noContentText</p>
+        <p class="text-gray-800 dark:text-slogan">@noContentText</p>
     }
 </section>

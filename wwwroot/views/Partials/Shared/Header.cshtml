@@ -1,32 +1,35 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
 
 @{
-    var themeObj = ViewData["Theme"];
-    var bgClass = ThemeValue(themeObj, "BgClass", "bg-white");
-    var textClass = ThemeValue(themeObj, "TextClass", "text-gray-800");
-    var shadowClass = ThemeValue(themeObj, "ShadowClass", "shadow-md");
+    var settings = Umbraco.ContentAtRoot().FirstOrDefault(x => x.ContentType.Alias == "companySettings");
 
-    var companyName = Model.Value<string>("companyName");
-    var websiteLogo = Model.Value<IPublishedContent>("websiteLogoLight");
+    if (settings == null)
+    {
+        return; // Dừng lại nếu không tìm thấy cài đặt
+    }
+
+    var companyName = settings.Value<string>("companyName") ?? "Viet Thang Loi Technology Company Limited";
+    
+    // Lấy logo từ Multi Picker, chỉ lấy item đầu tiên
+    var websiteLogoLight = settings.Value<IEnumerable<IPublishedContent>>("websiteLogoLight")?.FirstOrDefault();
+    var websiteLogoDark = settings.Value<IEnumerable<IPublishedContent>>("websiteLogoDark")?.FirstOrDefault();
 }
 
-<header class="@bgClass @textClass @shadowClass py-4 px-6 flex justify-between items-center sticky top-0 z-50">
+<header class="bg-white text-gray-800 dark:bg-dark dark:text-slogan shadow-xl py-4 px-6 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center">
-        @if (websiteLogo != null)
+        @if (websiteLogoLight != null)
         {
             <a href="/" title="@companyName" class="focus:outline-none">
-                <img src="@websiteLogo.Url()" alt="@companyName logo" class="h-10 w-auto">
+                <img src="@websiteLogoLight.Url()" alt="@companyName logo" class="h-10 w-auto light-mode-logo">
+                @if (websiteLogoDark != null)
+                {
+                    <img src="@websiteLogoDark.Url()" alt="@companyName logo" class="h-10 w-auto dark-mode-logo hidden">
+                }
             </a>
         }
     </div>
     @await Html.PartialAsync("Partials/Shared/Navigation")
 </header>
-
-@functions {
-    public string ThemeValue(object theme, string key, string fallback)
-    {
-        return theme?.GetType().GetProperty(key)?.GetValue(theme)?.ToString() ?? fallback;
-    }
-}

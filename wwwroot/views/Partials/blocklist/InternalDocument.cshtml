@@ -1,0 +1,128 @@
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
+@inherits UmbracoViewPage<BlockListItem>
+
+@{
+    var content = Model.Content;
+    var documentContent = content.Value<BlockListModel>("documentContent");
+
+    var documentTitle = content.Value<string>("documentTitle");
+    var shortDescription = content?.Value<string>("description");
+    var documentId = content?.Value<string>("documentId");
+    var revision = content?.Value<string>("revision");
+    var publicationDate = content?.Value<DateTime>("publicationDate");
+    var lastRevisedDate = content?.Value<DateTime>("lastRevisedDate");
+    var author = content?.Value<IPublishedContent>("author");
+    var authorName = author != null ? author.Name : "Admin";
+    var approvalStatus = content?.Value<string>("approvalStatus");
+    var category = content?.Value<string>("category");
+
+    var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "heroBanner", "Partials/blocklist/heroBanner" },
+        { "textBlock", "Partials/blocklist/textBlock" },
+        { "imagesBlock", "Partials/blocklist/textBlock" },
+        { "ctaBlock", "Partials/blocklist/ctaBlock" },
+        { "internalDocument", "Partials/blocklist/internalDocument" },
+        { "imageBlock", "Partials/blocklist/imageBlock" }
+    };
+}
+<div id="printArea">
+    <!-- Metadata Section -->
+    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mb-8 shadow-2xl print:bg-white print:text-black">
+
+        <!-- Logo + Tiêu đề -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+            <!-- Logo bên trái -->
+            <div class="flex justify-center md:justify-start">
+                <img src="https://n.vtltech.com.vn/media/gwiaezse/vtl_logo_no_slogan.svg" alt="Logo công ty" class="h-12 md:h-16 print:h-16 filter grayscale" />
+            </div>
+
+            <!-- Tiêu đề bên phải -->
+            <div class="text-center md:text-right flex-1">
+                <h1 class="text-3xl md:text-4xl font-bold text-primary print:text-black">@documentTitle</h1>
+            </div>
+        </div>
+
+        <!-- Mô tả ngắn -->
+        @if (!string.IsNullOrEmpty(shortDescription))
+        {
+            <p class="text-xl text-gray-600 dark:text-gray-400 mb-4 print:text-black">@shortDescription</p>
+        }
+
+        <!-- Thông tin metadata -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-400 print:text-black">
+            @if (!string.IsNullOrEmpty(documentId))
+            {
+                <div>
+                    <p class="font-semibold">Mã số tài liệu</p>
+                    <p>@documentId</p>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(revision))
+            {
+                <div>
+                    <p class="font-semibold">Phiên bản</p>
+                    <p>@revision</p>
+                </div>
+            }
+            @if (publicationDate != null)
+            {
+                <div>
+                    <p class="font-semibold">Ngày ban hành</p>
+                    <p>@publicationDate.Value.ToString("dd/MM/yyyy")</p>
+                </div>
+            }
+            @if (lastRevisedDate != null)
+            {
+                <div>
+                    <p class="font-semibold">Ngày sửa đổi gần nhất</p>
+                    <p>@lastRevisedDate.Value.ToString("dd/MM/yyyy")</p>
+                </div>
+            }
+            @if (authorName != null)
+            {
+                <div class="hidden print:block">
+                    <p class="font-semibold">Tác giả</p>
+                    <p>@authorName</p>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(approvalStatus))
+            {
+                <div class="hidden md:flex print:block">
+                    <p class="font-semibold">Trạng thái</p>
+                    <p>@approvalStatus</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Content Section -->
+    @if (documentContent != null && documentContent.Any())
+    {
+        <div class="prose max-w-none text-gray-800 dark:prose-invert dark:text-slogan print:text-black print:prose-invert">
+            @foreach (var block in documentContent)
+            {
+                var alias = block.Content.ContentType.Alias;
+                if (blockViewMap.TryGetValue(alias, out var partialPath))
+                {
+                    @await Html.PartialAsync(partialPath, block)
+                }
+                else
+                {
+                    <p class="text-red-500 print:text-black">Không tìm thấy view cho block: <strong>@alias</strong></p>
+                }
+            }
+        </div>
+    }
+</div>
+<!-- Nút lưu PDF -->
+<div class="flex justify-end mb-6">
+    <button onclick="printSection()" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded hover:bg-white hover:text-primary border border-primary transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V3m0 0L8 7m4-4l4 4M6 13h12v8H6v-8z" />
+        </svg>
+        Lưu thành PDF
+    </button>
+</div>

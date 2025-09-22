@@ -1,0 +1,41 @@
+@inherits UmbracoViewPage<IPublishedContent>
+
+@{
+    var currentPage = Model;
+    var title = currentPage.Name;
+    var description = currentPage.Value<string>("pageDescription"); // optional
+    var ancestors = currentPage.Ancestors().Where(x => x.Level > 1).OrderBy(x => x.Level).ToList();
+}
+
+<section class="relative bg-gray-100 dark:bg-gray-900 py-10">
+    <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+            <ol class="flex flex-wrap items-center space-x-2">
+                <li>
+                    <a href="/" class="hover:text-primary font-medium">Trang chủ</a>
+                </li>
+                @foreach (var ancestor in ancestors)
+                {
+                    <li>
+                        <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
+                        <a href="@ancestor.Url()" class="hover:text-primary dark:hover:text-white">@ancestor.Name</a>
+                    </li>
+                }
+                <li>
+                    <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
+                    <span class="text-gray-800 dark:text-white font-semibold">@title</span>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Tiêu đề -->
+        <h1 class="text-3xl md:text-5xl font-bold text-gray-800 dark:text-white">@title</h1>
+
+        <!-- Mô tả ngắn -->
+        @if (!string.IsNullOrWhiteSpace(description))
+        {
+            <p class="mt-4 text-lg text-gray-600 dark:text-gray-300">@description</p>
+        }
+    </div>
+</section>

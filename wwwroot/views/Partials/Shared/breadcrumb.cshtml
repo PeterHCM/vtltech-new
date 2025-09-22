@@ -1,0 +1,26 @@
+@inherits UmbracoViewPage<IPublishedContent>
+
+@{
+    var currentPage = Model;
+    var ancestors = currentPage.Ancestors().Where(x => x.Level > 1).OrderBy(x => x.Level).ToList();
+}
+<nav aria-label="Breadcrumb" class="my-4">
+    <ol class="flex flex-wrap items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
+        <li>
+            <a href="/" class="hover:text-primary dark:hover:text-white font-medium">Trang chủ</a>
+        </li>
+
+        @foreach (var ancestor in ancestors)
+        {
+            <li>
+                <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
+                <a href="@ancestor.Url()" class="hover:text-primary dark:hover:text-white">@ancestor.Name</a>
+            </li>
+        }
+
+        <li>
+            <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
+            <span class="text-gray-800 dark:text-white font-semibold">@currentPage.Name</span>
+        </li>
+    </ol>
+</nav>
