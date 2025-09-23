@@ -2,11 +2,12 @@
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.PublishedContent
 @inherits UmbracoViewPage<BlockListItem>
-
 @{
     var content = Model.Content;
     var documentContent = content.Value<BlockListModel>("documentContent");
-
+    var settings = Umbraco.ContentAtRoot().FirstOrDefault(x => x.ContentType.Alias == "companySettings");
+    var websiteLogo = settings.Value<IEnumerable<IPublishedContent>>("websiteLogoDark")?.FirstOrDefault() ?? settings.Value<IEnumerable<IPublishedContent>>("websiteLogoLight")?.FirstOrDefault(); // Fallback light nếu dark null
+    var companyName = settings?.Value<string>("companyName") ?? "Viet Thang Loi Technology Company Limited";
     var documentTitle = content.Value<string>("documentTitle");
     var shortDescription = content?.Value<string>("description");
     var documentId = content?.Value<string>("documentId");
@@ -16,7 +17,38 @@
     var author = content?.Value<IPublishedContent>("author");
     var authorName = author != null ? author.Name : "Admin";
     var approvalStatus = content?.Value<string>("approvalStatus");
-    var category = content?.Value<string>("category");
+    var documentType = content?.Value<string>("documentType");
+    var departments = content?.Value<string>("departments");
+
+    // Hàm chuyển đổi documentType
+    string GetDocumentTypeName(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return "Không xác định";
+
+        code = code.ToUpperInvariant();
+        if (code.Contains("MNL")) return "Sổ tay";
+        if (code.Contains("PLY")) return "Quy chế";
+        if (code.Contains("PCS")) return "Quy trình";
+        if (code.Contains("INS")) return "Hướng dẫn";
+        if (code.Contains("FRM")) return "Biểu mẫu";
+        return code;
+    }
+
+    // Hàm chuyển đổi departments
+    string GetDepartmentName(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return "Không xác định";
+
+        code = code.ToUpperInvariant();
+        if (code.Contains("AG")) return "Toàn công ty";
+        if (code.Contains("AHR")) return "Hành chính & Nhân sự";
+        if (code.Contains("SAL")) return "Kinh doanh";
+        if (code.Contains("ACC")) return "Kế toán";
+        if (code.Contains("PUR")) return "Mua hàng";
+        return code;
+    }
 
     var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -29,29 +61,22 @@
     };
 }
 <div id="printArea">
-    <!-- Metadata Section -->
     <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mb-8 shadow-2xl print:bg-white print:text-black">
-
-        <!-- Logo + Tiêu đề -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-            <!-- Logo bên trái -->
-            <div class="flex justify-center md:justify-start">
-                <img src="https://n.vtltech.com.vn/media/gwiaezse/vtl_logo_no_slogan.svg" alt="Logo công ty" class="h-12 md:h-16 print:h-16 filter grayscale" />
-            </div>
-
-            <!-- Tiêu đề bên phải -->
+            @if (websiteLogo != null)
+            {
+                <div class="flex justify-center md:justify-start">
+                    <img src="@websiteLogo.Url()" alt="@companyName logo" class="h-8 w-auto md:h-16 print:h-16" />
+                </div>
+            }
             <div class="text-center md:text-right flex-1">
                 <h1 class="text-3xl md:text-4xl font-bold text-primary print:text-black">@documentTitle</h1>
             </div>
         </div>
-
-        <!-- Mô tả ngắn -->
         @if (!string.IsNullOrEmpty(shortDescription))
         {
             <p class="text-xl text-gray-600 dark:text-gray-400 mb-4 print:text-black">@shortDescription</p>
         }
-
-        <!-- Thông tin metadata -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-400 print:text-black">
             @if (!string.IsNullOrEmpty(documentId))
             {
@@ -95,10 +120,22 @@
                     <p>@approvalStatus</p>
                 </div>
             }
+            @if (!string.IsNullOrEmpty(departments))
+            {
+                <div class="hidden md:flex print:block">
+                    <p class="font-semibold">Ban hành bởi:</p>
+                    <p>@GetDepartmentName(departments)</p>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(documentType))
+            {
+                <div class="hidden md:flex print:block">
+                    <p class="font-semibold">Loại tài liệu:</p>
+                    <p>@GetDocumentTypeName(documentType)</p>
+                </div>
+            }
         </div>
     </div>
-
-    <!-- Content Section -->
     @if (documentContent != null && documentContent.Any())
     {
         <div class="prose max-w-none text-gray-800 dark:prose-invert dark:text-slogan print:text-black print:prose-invert">
@@ -117,12 +154,10 @@
         </div>
     }
 </div>
-<!-- Nút lưu PDF -->
-<div class="flex justify-end mb-6">
-    <button onclick="printSection()" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded hover:bg-white hover:text-primary border border-primary transition">
+<div class="flex mb-6">
+    <button onclick="printSection('printArea')" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded hover:bg-white hover:text-primary border border-primary transition">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V3m0 0L8 7m4-4l4 4M6 13h12v8H6v-8z" />
         </svg>
-        Lưu thành PDF
     </button>
 </div>

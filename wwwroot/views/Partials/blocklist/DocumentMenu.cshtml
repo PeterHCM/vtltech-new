@@ -1,86 +1,206 @@
-@inherits UmbracoViewPage<BlockListItem>
 @using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models.PublishedContent
+@inherits UmbracoViewPage<BlockListItem>
 
 @{
-    var content = Model.Content;
-    var menuTitle = content.Value<string>("title");
-    var documentTypeSelected = content.Value<string>("documentType");
-    var departmentSelected = content.Value<string>("derpartment");
+    // Kiểm tra Model.Content
+    var content = Model?.Content;
+    if (content == null)
+    {
+        <div class="text-center text-red-600 dark:text-red-400 p-6">
+            <p>Lỗi: Không tìm thấy nội dung BlockListItem.</p>
+        </div>
+        return;
+    }
+
+    // Lấy dữ liệu từ content
+    var menuTitle = content.Value<string>("title") ?? "Danh bạ tài liệu";
+    var departmentSelected = content.Value<string>("department")?.ToLowerInvariant();
     var selectAll = content.Value<bool>("selectAll");
+    string GetDepartmentName(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return "Không xác định";
 
-    var allCompanyDocuments = Umbraco.ContentAtRoot()
-        .SelectMany(x => x.DescendantsOfType("companyDocument"))
-        .ToList();
+        code = code.ToUpperInvariant();
+        if (code.Contains("AG")) return "Toàn công ty";
+        if (code.Contains("AHR")) return "Hành chính & Nhân sự";
+        if (code.Contains("SAL")) return "Kinh doanh";
+        if (code.Contains("ACC")) return "Kế toán";
+        if (code.Contains("PUR")) return "Mua hàng";
+        return code;
+    }
 
-    var index = 1;
+    string GetDocumentTypeName(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return "Không xác định";
 
-    var groupedDocs = allCompanyDocuments
-        .GroupBy(doc => doc.Value<string>("documentType"))
-        .ToDictionary(
-            g => g.Key,
-            g => g.GroupBy(doc => doc.Value<string>("departments"))
-        );
+        code = code.ToUpperInvariant();
+        if (code.Contains("MNL")) return "Sổ tay";
+        if (code.Contains("PLY")) return "Quy chế";
+        if (code.Contains("PCS")) return "Quy trình";
+        if (code.Contains("INS")) return "Hướng dẫn";
+        if (code.Contains("FRM")) return "Biểu mẫu";
+        return code;
+    }
+    // Lấy tất cả tài liệu
+    var allCompanyDocuments = Umbraco?.ContentAtRoot()
+        ?.SelectMany(x => x.DescendantsOfType("companyDocument"))
+        ?.Where(doc => doc != null)
+        ?.ToList() ?? new List<IPublishedContent>();
+
+    // Lọc tài liệu
+    var filteredDocs = selectAll
+        ? allCompanyDocuments.OrderBy(doc => doc?.Value<string>("documentId") ?? "").ToList()
+        : allCompanyDocuments
+            .Where(doc => !string.IsNullOrEmpty(departmentSelected) && doc?.Value<string>("departments")?.ToLowerInvariant() == departmentSelected)
+            .OrderBy(doc => doc?.Value<string>("documentId") ?? "")
+            .ToList();
+    // Nhóm tài liệu
+    var groupedDocs = selectAll
+        ? filteredDocs
+            .GroupBy(doc => GetDocumentTypeName(doc?.Value<string>("documentType")))
+            .OrderBy(g => g.Key)
+            .ToDictionary(
+                g => g.Key,
+                g => g.GroupBy(doc => GetDepartmentName(doc?.Value<string>("departments")))
+                      .OrderBy(d => d.Key)
+                      .ToList())
+        : filteredDocs
+            .GroupBy(doc => GetDepartmentName(doc?.Value<string>("departments")))
+            .OrderBy(g => g.Key)
+            .ToDictionary(g => g.Key, g => new List<IGrouping<string, IPublishedContent>> { g });
 }
-@if (!string.IsNullOrWhiteSpace(menuTitle))
-{
-    <h2 class="text-2xl md:text-3xl font-bold mb-6 text-primary dark:text-primary-light">
-        @menuTitle
-    </h2>
-}
 
-@if (selectAll && groupedDocs.Any())
-{
-    <div class="space-y-10 py-8 px-4 md:px-6">
-        @foreach (var docTypeGroup in groupedDocs)
-        {
-            <section class="space-y-6">
-                <h2 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    Loại tài liệu: @docTypeGroup.Key
-                </h2>
+<section class="container mx-auto px-4 sm:px-6 py-8 bg-white dark:bg-gray-900 rounded-lg shadow-lg dark:shadow-xl transition-colors duration-300">
+    <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-800 dark:text-white">@menuTitle</h2>
 
-                @foreach (var deptGroup in docTypeGroup.Value)
+    @if (groupedDocs.Any())
+    {
+        <div class="space-y-8">
+            @if (selectAll)
+            {
+                @foreach (var docTypeGroup in groupedDocs)
                 {
-                    <div class="space-y-4 pl-2 md:pl-4">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    <section class="space-y-4">
+                        <h3 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Loại tài liệu: @docTypeGroup.Key
+                        </h3>
+
+                        @foreach (var deptGroup in docTypeGroup.Value)
+                        {
+                            var index = 1; // Reset index cho mỗi phòng ban
+                            <div class="space-y-4 pl-2 sm:pl-4">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                    Phòng ban: @deptGroup.Key
+                                </h4>
+
+                                <ul class="space-y-3">
+                                    @foreach (var doc in deptGroup.OrderBy(d => d?.Value<string>("title") ?? ""))
+                                    {
+                                        if (doc == null) { continue; }
+                                        var url = doc.Url() ?? "#";
+                                        var title = doc.Value<string>("title") ?? "Không có tiêu đề";
+                                        var documentId = doc.Value<string>("documentId") ?? "N/A";
+                                        var revision = doc.Value<string>("revision") ?? "N/A";
+                                        var publicationDate = doc.HasValue("publicationDate") ? doc.Value<DateTime>("publicationDate").ToString("dd/MM/yyyy") : "N/A";
+                                        var lastRevisedDate = doc.HasValue("lastRevisedDate") ? doc.Value<DateTime>("lastRevisedDate").ToString("dd/MM/yyyy") : "N/A";
+
+                                        <li>
+                                            <article class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 sm:p-5 shadow-md hover:shadow-lg transition-shadow duration-300 text-gray-900 dark:text-gray-100">
+                                                <h5 class="text-base sm:text-lg font-semibold mb-2 flex items-center gap-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                    </svg>
+                                                    <a href="@url" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">@index. @title</a>
+                                                </h5>
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm leading-relaxed">
+                                                    <div class="space-y-1">
+                                                        <p><span class="font-medium">Mã tài liệu:</span> @documentId</p>
+                                                        <p><span class="font-medium">Phiên bản:</span> @revision</p>
+                                                        <p><span class="font-medium">Ngày ban hành:</span> @publicationDate</p>
+                                                    </div>
+                                                    <div class="space-y-1">
+                                                        <p><span class="font-medium">Ngày sửa đổi:</span> @lastRevisedDate</p>
+                                                        <p><span class="font-medium">Phòng ban:</span> @deptGroup.Key</p>
+                                                        <p><span class="font-medium">Loại tài liệu:</span> @GetDocumentTypeName(doc.Value<string>("documentType"))</p>
+                                                    </div>
+                                                </div>
+                                            </article>
+                                        </li>
+                                        index++;
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </section>
+                }
+            }
+            else
+            {
+                @foreach (var deptGroup in groupedDocs)
+                {
+                    var index = 1; // Reset index cho mỗi phòng ban
+                    <section class="space-y-4">
+                        <h3 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
                             Phòng ban: @deptGroup.Key
                         </h3>
 
-                        <ul class="space-y-4">
-                            @foreach (var doc in deptGroup)
+                        <ul class="space-y-3">
+                            @foreach (var doc in deptGroup.Value.FirstOrDefault()?.OrderBy(d => d?.Value<string>("title") ?? "") ?? Enumerable.Empty<IPublishedContent>())
                             {
-                                var url = doc?.Url() ?? "#";
-                                var title = doc.Value<string>("title");
-                                var documentId = doc.Value<string>("documentId");
-                                var revision = doc.Value<string>("revision");
-                                var publicationDate = doc.Value<DateTime>("publicationDate").ToString("dd/MM/yyyy");
-                                var lastRevisedDate = doc.Value<DateTime>("lastRevisedDate").ToString("dd/MM/yyyy");
+                                if (doc == null) { continue; }
+                                var url = doc.Url() ?? "#";
+                                var title = doc.Value<string>("title") ?? "Không có tiêu đề";
+                                var documentId = doc.Value<string>("documentId") ?? "N/A";
+                                var revision = doc.Value<string>("revision") ?? "N/A";
+                                var publicationDate = doc.HasValue("publicationDate") ? doc.Value<DateTime>("publicationDate").ToString("dd/MM/yyyy") : "N/A";
+                                var lastRevisedDate = doc.HasValue("lastRevisedDate") ? doc.Value<DateTime>("lastRevisedDate").ToString("dd/MM/yyyy") : "N/A";
 
                                 <li>
-                                    <article class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm text-gray-900 dark:text-gray-100">
-                                        <h4 class="text-base md:text-lg font-semibold mb-2">
-                                            <a href="@url" class="hover:text-primary text-secondary dark:text-secondary">@index. @title</a>
-                                        </h4>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm leading-relaxed">
-                                            <div>
+                                    <article class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 sm:p-5 shadow-md hover:shadow-lg transition-shadow duration-300 text-gray-900 dark:text-gray-100">
+                                        <h5 class="text-base sm:text-lg font-semibold mb-2 flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                            <a href="@url" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">@index. @title</a>
+                                        </h5>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm leading-relaxed">
+                                            <div class="space-y-1">
                                                 <p><span class="font-medium">Mã tài liệu:</span> @documentId</p>
                                                 <p><span class="font-medium">Phiên bản:</span> @revision</p>
                                                 <p><span class="font-medium">Ngày ban hành:</span> @publicationDate</p>
                                             </div>
-                                            <div>
+                                            <div class="space-y-1">
                                                 <p><span class="font-medium">Ngày sửa đổi:</span> @lastRevisedDate</p>
                                                 <p><span class="font-medium">Phòng ban:</span> @deptGroup.Key</p>
-                                                <p><span class="font-medium">Loại tài liệu:</span> @docTypeGroup.Key</p>
+                                                <p><span class="font-medium">Loại tài liệu:</span> @GetDocumentTypeName(doc.Value<string>("documentType"))</p>
                                             </div>
                                         </div>
                                     </article>
                                 </li>
-
                                 index++;
                             }
                         </ul>
-                    </div>
+                    </section>
                 }
-            </section>
-        }
-    </div>
-}
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center text-gray-600 dark:text-gray-400 p-6">
+            <p>Không tìm thấy tài liệu nào phù hợp.</p>
+        </div>
+    }
+</section>

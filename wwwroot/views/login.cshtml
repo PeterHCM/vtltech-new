@@ -1,0 +1,48 @@
+@using Umbraco.Cms.Web.Common.PublishedModels
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<LoginPage>
+
+@{
+    Layout = "intranet.cshtml";
+    var error = ViewBag.LoginError as string;
+    var success = ViewBag.LoginSuccess as string;
+}
+
+<section class="max-w-md mx-auto mt-10 p-6 bg-white dark:bg-gray-900 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">@Model.Title</h1>
+
+    <div class="mb-6 prose dark:prose-invert">
+        @Model.Body
+    </div>
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="mb-4 text-red-600 bg-red-100 dark:bg-red-900 dark:text-red-300 p-2 rounded">@error</div>
+    }
+
+    @if (!string.IsNullOrEmpty(success))
+    {
+        <div class="mb-4 text-green-600 bg-green-100 dark:bg-green-900 dark:text-green-300 p-2 rounded">@success</div>
+    }
+
+    <form method="post" action="/login-handler" class="space-y-4">
+        <div>
+            <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tên đăng nhập</label>
+            <input type="text" id="username" name="username"
+                   class="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                   required />
+        </div>
+
+        <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mật khẩu</label>
+            <input type="password" id="password" name="password"
+                   class="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                   required />
+        </div>
+
+        <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded dark:bg-blue-500 dark:hover:bg-blue-600">
+            Đăng nhập
+        </button>
+    </form>
+</section>
+

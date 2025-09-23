@@ -1,0 +1,242 @@
+@using Umbraco.Cms.Web.Common.PublishedModels
+@using Umbraco.Cms.Core.Models.PublishedContent
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<EmployeeDirectory>
+@inject Umbraco.Cms.Core.Services.IMemberService MemberService
+@inject Umbraco.Cms.Web.Common.UmbracoHelper Umbraco
+@using System.Text.Json;
+@{
+    Layout = "intranet.cshtml";
+
+    var members = MemberService.GetAllMembers()
+        .Where(m => m.ContentTypeAlias == "companyMember")
+        .OrderBy(m => m.GetValue<string>("fullName"))
+        .ToList();
+}
+<section class="max-w-5xl mx-auto mt-12 p-6 bg-white dark:bg-gray-900 rounded-xl shadow-2xl">
+    <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">@Model.Title</h1>
+    <div class="prose max-w-none mb-8 text-gray-600 dark:text-gray-200">
+        @Html.Raw(Model.Description)
+    </div>
+    @foreach (var member in members)
+    {
+        // Sửa lỗi ảnh: Dùng Guid thay vì string cho Media Picker
+        var photoId = member.GetValue<Guid>("photo");
+        var photoUrl = photoId != Guid.Empty ? Umbraco.Media(photoId)?.Url() : "https://placehold.co/200x200/10B981/FFFFFF?text=Avatar";
+
+        var name = member.GetValue<string>("fullName");
+        var gender = member.GetValue<string>("gender");
+        var dateOfBirth = member.GetValue<DateTime?>("dateOfBirth");
+        var maritalStatus = JsonSerializer.Deserialize<List<string>>(member.GetValue<string>("maritalStatus") ?? "[]")?.FirstOrDefault();
+        var nationalId = member.GetValue<string>("nationalId");
+        var dateOfIssue = member.GetValue<DateTime?>("dateOfIssue");
+        var placeOfIssue = member.GetValue<string>("placeOfIssue");
+        var taxCode = member.GetValue<string>("taxCode");
+        
+        var phone = member.GetValue<string>("phone");
+        var email = member.GetValue<string>("personalEmail");
+        var permanentAddress = member.GetValue<string>("permanentAddress");
+        var currentAddress = member.GetValue<string>("currentAddress");
+
+        var position = JsonSerializer.Deserialize<List<string>>(member.GetValue<string>("position") ?? "[]")?.FirstOrDefault();
+        var department = JsonSerializer.Deserialize<List<string>>(member.GetValue<string>("department") ?? "[]")?.FirstOrDefault();
+        var dateOfJoining = member.GetValue<DateTime?>("dateOfJoining");
+        var contractType = JsonSerializer.Deserialize<List<string>>(member.GetValue<string>("contractType") ?? "[]")?.FirstOrDefault();
+
+        var emergencyContact1Name = member.GetValue<string>("emergencyContact1Name");
+        var emergencyContact1Relationship = JsonSerializer.Deserialize<List<string>>(member.GetValue<string>("emergencyContact1Relationship") ?? "[]")?.FirstOrDefault();
+        var emergencyContact1Phone = member.GetValue<string>("emergencyContact1Phone");
+        var emergencyContact1Address = member.GetValue<string>("emergencyContact1Address");
+
+        var emergencyContact2Name = member.GetValue<string>("emergencyContact2Name");
+        var emergencyContact2Relationship = JsonSerializer.Deserialize<List<string>>(member.GetValue<string>("emergencyContact2Relationship") ?? "[]")?.FirstOrDefault();
+        var emergencyContact2Phone = member.GetValue<string>("emergencyContact2Phone");
+        var emergencyContact2Address = member.GetValue<string>("emergencyContact2Address");
+
+        <div class="mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-xl shadow-md transition duration-300 hover:shadow-lg">
+            <div class="flex flex-col items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-6">
+                @if (!string.IsNullOrWhiteSpace(photoUrl))
+                {
+                    <img src="@photoUrl" alt="@name" class="w-28 h-28 rounded-full mb-4 object-cover shadow-md ring-2 ring-gray-200 dark:ring-gray-600" />
+                }
+                @if (!string.IsNullOrWhiteSpace(name))
+                {
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-white">@name</h3>
+                }
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-700 dark:text-gray-200">
+                <div>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-800 dark:text-white">
+                        <span class="text-blue-500 dark:text-blue-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Thông tin cá nhân
+                    </h2>
+                    @if (!string.IsNullOrWhiteSpace(gender))
+                    {
+                        <p class="text-sm flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4c.53 0 1.05.07 1.56.2a8.004 8.004 0 01-5.188 5.188A8.002 8.002 0 014 12c0 2.21.895 4.215 2.343 5.657A8.002 8.002 0 0112 20c2.21 0 4.215-.895 5.657-2.343A8.002 8.002 0 0120 12c0-.53-.07-1.05-.2-1.56a8.004 8.004 0 01-5.188-5.188A8.002 8.002 0 0112 4z" /></svg>
+                            Giới tính: @gender
+                        </p>
+                    }
+                    @if (dateOfBirth.HasValue)
+                    {
+                        <p class="text-sm flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h.01M3 11h18a2 2 0 012 2v6a2 2 0 01-2 2H3a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>
+                            Ngày sinh: @dateOfBirth.Value.ToString("dd/MM/yyyy")
+                        </p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(maritalStatus))
+                    {
+                        <p class="text-sm flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                            Tình trạng hôn nhân: @maritalStatus
+                        </p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(nationalId))
+                    {
+                        <p class="text-sm flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zM12.559 7.747a.25.25 0 01-.254-.255c-.058-.294-.112-.591-.167-.891a.25.25 0 01.32-.236c.365.111.722.247 1.066.411a.25.25 0 01-.19.467c-.201-.11-.407-.216-.615-.318a.25.25 0 01-.16.291z" /></svg>
+                            Số CCCD/CMND: @nationalId
+                        </p>
+                    }
+                    @if (dateOfIssue.HasValue)
+                    {
+                        <p class="text-sm flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h.01M3 11h18a2 2 0 012 2v6a2 2 0 01-2 2H3a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>
+                            Ngày cấp: @dateOfIssue.Value.ToString("dd/MM/yyyy")
+                        </p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(placeOfIssue))
+                    {
+                        <p class="text-sm flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z" /></svg>
+                            Nơi cấp: @placeOfIssue
+                        </p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(taxCode))
+                    {
+                        <p class="text-sm flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zM12.559 7.747a.25.25 0 01-.254-.255c-.058-.294-.112-.591-.167-.891a.25.25 0 01.32-.236c.365.111.722.247 1.066.411a.25.25 0 01-.19.467c-.201-.11-.407-.216-.615-.318a.25.25 0 01-.16.291z" /></svg>
+                            Mã số thuế: @taxCode
+                        </p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(permanentAddress))
+                    {
+                        <p class="text-sm flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z" /></svg>
+                            Địa chỉ thường trú: @permanentAddress
+                        </p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(currentAddress))
+                    {
+                        <p class="text-sm flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z" /></svg>
+                            Địa chỉ hiện tại: @currentAddress
+                        </p>
+                    }
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-800 dark:text-white">
+                        <span class="text-green-500 dark:text-green-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7z" />
+                                <path fill-rule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.4 7H5.6L2.2 3.6A1 1 0 013 2z" clip-rule="evenodd" />
+                                <path d="M10 13a1 1 0 00-1 1v3a1 1 0 102 0v-3a1 1 0 00-1-1z" />
+                                <path fill-rule="evenodd" d="M13.6 7H6.4L3 3.6V2a1 1 0 011-1h12a1 1 0 011 1v1.6l-3.4 3.4zm-.4 3l3.4 3.4A1 1 0 0117 14.6V17a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3a1 1 0 00-1-1H7a1 1 0 00-1 1v3a1 1 0 01-1 1H2a1 1 0 01-1-1v-2.4l3.4-3.4H3zm-5.6 0H6.4" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Thông tin công việc
+                    </h2>
+                    @if (dateOfJoining.HasValue)
+                    {
+                        <p class="text-sm mb-2">Ngày vào công ty: <span class="font-medium">@dateOfJoining.Value.ToString("dd/MM/yyyy")</span></p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(position))
+                    {
+                        <p class="text-sm mb-2">Chức vụ: <span class="font-medium">@position</span></p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(department))
+                    {
+                        <p class="text-sm mb-2">Phòng ban: <span class="font-medium">@department</span></p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(contractType))
+                    {
+                        <p class="text-sm mb-2">Loại hợp đồng: <span class="font-medium">@contractType</span></p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(phone))
+                    {
+                        <p class="text-sm mb-2">Điện thoại: <a href="tel:@phone" class="text-blue-600 dark:text-blue-400 hover:underline">@phone</a></p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(email))
+                    {
+                        <p class="text-sm mb-2">Email: <a href="mailto:@email" class="text-blue-600 dark:text-blue-400 hover:underline">@email</a></p>
+                    }
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-3 flex items-center gap-2 text-gray-800 dark:text-white">
+                        <span class="text-red-500 dark:text-red-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 002 0V8a1 1 0 00-.445-.832l-1.5-1.5z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Liên hệ khẩn cấp
+                    </h2>
+                    <div>
+                        @if (!string.IsNullOrWhiteSpace(emergencyContact1Name))
+                        {
+                            <p class="text-sm font-medium text-gray-800 dark:text-white">@emergencyContact1Name</p>
+                            @if (!string.IsNullOrWhiteSpace(emergencyContact1Relationship))
+                            {
+                                <p class="text-xs italic text-gray-500 dark:text-gray-400 mb-2">(@emergencyContact1Relationship)</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(emergencyContact1Phone))
+                            {
+                                <p class="text-sm flex items-center gap-1 mb-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.074 1.21a11.023 11.023 0 006.105 6.105l1.21-2.074a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                    <a href="tel:@emergencyContact1Phone" class="text-blue-600 dark:text-blue-400 hover:underline">@emergencyContact1Phone</a>
+                                </p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(emergencyContact1Address))
+                            {
+                                <p class="text-sm flex items-center gap-1 mb-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z" /></svg>
+                                    @emergencyContact1Address
+                                </p>
+                            }
+                        }
+                    </div>
+
+                    <div class="mt-4">
+                        @if (!string.IsNullOrWhiteSpace(emergencyContact2Name))
+                        {
+                            <p class="text-sm font-medium text-gray-800 dark:text-white">@emergencyContact2Name</p>
+                            @if (!string.IsNullOrWhiteSpace(emergencyContact2Relationship))
+                            {
+                                <p class="text-xs italic text-gray-500 dark:text-gray-400 mb-2">(@emergencyContact2Relationship)</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(emergencyContact2Phone))
+                            {
+                                <p class="text-sm flex items-center gap-1 mb-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.074 1.21a11.023 11.023 0 006.105 6.105l1.21-2.074a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                    <a href="tel:@emergencyContact2Phone" class="text-blue-600 dark:text-blue-400 hover:underline">@emergencyContact2Phone</a>
+                                </p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(emergencyContact2Address))
+                            {
+                                <p class="text-sm flex items-center gap-1 mb-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z" /></svg>
+                                    @emergencyContact2Address
+                                </p>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</section>
