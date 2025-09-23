@@ -10,35 +10,55 @@
 }
 
 <nav class="hidden md:flex items-center space-x-6">
-    @if (menuItems?.Any() == true)
-    {
-        <ul class="flex space-x-6">
-            @foreach (var item in menuItems)
-            {
-                var isActive = IsActive(item);
-                
-                <li class="group relative">
-                    <a href="@item.Url()" 
-                       class="@(isActive ? "text-primary" : "text-gray-800 dark:text-slogan") 
-                              font-medium transition-colors hover:text-primary dark:hover:text-primary">
-                        @item.Name
-                    </a>
-                    @await Html.PartialAsync("Partials/Shared/SubMenu", item)
-                </li>
-            }
-        </ul>
-    }
+    <div class="flex items-center justify-between w-full">
+        @if (menuItems?.Any() == true)
+        {
+            <ul class="flex space-x-6">
+                @foreach (var item in menuItems)
+                {
+                    var isActive = IsActive(item);
+                    
+                    <li class="group relative">
+                        <a href="@item.Url()" 
+                           class="@(isActive ? "text-primary" : "text-gray-800 dark:text-slogan") 
+                                  font-medium transition-colors hover:text-primary dark:hover:text-primary">
+                            @item.Name
+                        </a>
+                        @await Html.PartialAsync("Partials/Shared/SubMenu", item)
+                    </li>
+                }
+            </ul>
+        }
+        <!-- Thêm nút Search cho desktop -->
+        <div class="flex items-center">
+            <button type="button" class="search-toggle text-gray-800 dark:text-slogan hover:text-primary focus:outline-none" aria-label="Open search">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M21 21l-4.35-4.35m0 0a7 7 0 111.414-1.414L21 21z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
 </nav>
 
 <nav class="md:hidden bg-white text-gray-800 dark:bg-dark dark:text-slogan shadow-xl">
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-300 dark:border-gray-700">
         <div class="text-lg font-semibold"></div>
-        <button type="button" class="mobile-menu-button text-gray-800 dark:text-slogan focus:outline-none">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-        </button>
+        <div class="flex items-center space-x-4">
+            <!-- Thêm nút Search cho mobile -->
+            <button type="button" class="search-toggle text-gray-800 dark:text-slogan hover:text-primary focus:outline-none" aria-label="Open search">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M21 21l-4.35-4.35m0 0a7 7 0 111.414-1.414L21 21z"/>
+                </svg>
+            </button>
+            <button type="button" class="mobile-menu-button text-gray-800 dark:text-slogan focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
     <div class="mobile-menu hidden px-4 py-2">
@@ -94,6 +114,31 @@
     </div>
 </nav>
 
+<!-- Search Input Overlay -->
+<div id="search-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white dark:bg-dark p-4 rounded-lg w-full max-w-md mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-slogan">Search</h2>
+                <button type="button" class="search-close text-gray-800 dark:text-slogan focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="search-form" class="flex items-center">
+                <input type="text" id="search-input" placeholder="Search..." 
+                       class="w-full px-4 py-2 rounded-l-md border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-slogan bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-primary">
+                <button type="submit" 
+                        class="px-4 py-2 bg-primary text-white rounded-r-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary">
+                    Search
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const menuBtn = document.querySelector(".mobile-menu-button");
@@ -111,6 +156,40 @@
                 submenu?.classList.toggle("hidden");
                 icon?.classList.toggle("rotate-180");
             });
+        });
+
+        // Search Overlay Toggle
+        const searchToggles = document.querySelectorAll(".search-toggle");
+        const searchOverlay = document.getElementById("search-overlay");
+        const searchForm = document.getElementById("search-form");
+        const searchInput = document.getElementById("search-input");
+        const searchClose = document.querySelector(".search-close");
+
+        searchToggles.forEach(btn => {
+            btn.addEventListener("click", () => {
+                searchOverlay?.classList.remove("hidden");
+                searchInput?.focus();
+            });
+        });
+
+        searchClose?.addEventListener("click", () => {
+            searchOverlay?.classList.add("hidden");
+        });
+
+        searchForm?.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const query = searchInput?.value?.toLowerCase() || "";
+            if (query) {
+                window.location.href = `/search?q=${encodeURIComponent(query)}`;
+            }
+            searchOverlay?.classList.add("hidden");
+        });
+
+        // Close overlay when clicking outside
+        searchOverlay?.addEventListener("click", (e) => {
+            if (e.target === searchOverlay) {
+                searchOverlay.classList.add("hidden");
+            }
         });
     });
 </script>

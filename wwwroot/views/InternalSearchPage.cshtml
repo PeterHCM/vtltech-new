@@ -11,26 +11,39 @@
     var searchResultsPlaceHolder = Model.Value<string>("searchResultsPlaceHolder") ?? "";
     var title = Model.Value<string>("title") ?? "Search";
     var noResultsMessage = Model.Value<string>("noResultsMessage") ?? "Không tìm thấy";
+
+    // Lấy tất cả nội dung từ root
     var results = Model.Root()?
         .Descendants()
-        .Where(x => x.Name?.ToLowerInvariant().Contains(query) == true)
+        .Where(x => !string.IsNullOrEmpty(query) &&
+                   (x.Name?.ToLowerInvariant().Contains(query) == true ||
+                    x.Value<string>("SEOmetaDescription")?.ToLowerInvariant().Contains(query) == true))
         ?? Enumerable.Empty<IPublishedContent>();
 
+    // Xử lý phân trang
     var pageRaw = Context.Request.Query["page"].ToString();
-    var page = int.TryParse(pageRaw, out var p) && p > 0 ? p : 1;
+    var page = int.TryParse(pageRaw, out var p) && p > 0 ? Math.Min(p, (int)Math.Ceiling((double)results.Count() / pageSize)) : 1;
 
     var total = results.Count();
     var totalPages = (int)Math.Ceiling((double)total / pageSize);
     var paged = results.Skip((page - 1) * pageSize).Take(pageSize);
 }
 
-<div class="container py-8 px-4 md:px-6 space-y-10 my-6">
-    <form method="get" class="mb-4">
+<!-- SEO Meta -->
+@if (!string.IsNullOrWhiteSpace(query))
+{
+    <meta name="description" content="Kết quả tìm kiếm cho '@query' trên trang web." />
+}
+
+<div class="container py-8 px-4 md:px-6 space-y-10 my-6" role="main" aria-label="Search Results">
+    <form method="get" class="mb-4" aria-label="Search Form">
         <div class="flex flex-col md:flex-row items-stretch gap-3">
             <input type="text" name="q" value="@query" placeholder="@searchResultsPlaceHolder"
-                   class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                   class="flex-1 px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   aria-label="Search input" />
             <button type="submit"
-                    class="px-6 py-2 rounded bg-primary text-white hover:bg-secondary transition text-sm md:text-base">
+                    class="px-6 py-2 rounded bg-primary text-white hover:bg-secondary transition text-sm md:text-base"
+                    aria-label="Submit search">
                 @title
             </button>
         </div>
@@ -38,43 +51,53 @@
 
     @if (!string.IsNullOrWhiteSpace(query))
     {
-        <p class="mb-2 text-gray-800 dark:text-gray-200">
+        <p class="mb-2 text-gray-800 dark:text-gray-200" role="status">
             Tìm thấy <strong>@total</strong> kết quả cho từ khóa: <strong>@query</strong>
         </p>
 
-        @foreach (var item in paged)
+        @if (!paged.Any())
         {
-            var url = item?.Url() ?? "#";
-            var name = item?.Name ?? "Không có tiêu đề";
-            var description = item?.Value<string>("SEOmetaDescription") ?? "";
+            <p class="text-gray-500 dark:text-gray-400">@noResultsMessage</p>
+        }
+        else
+        {
+            @foreach (var item in paged)
+            {
+                var url = item?.Url() ?? "#";
+                var name = item?.Name ?? "Không có tiêu đề";
+                var description = item?.Value<string>("SEOmetaDescription") ?? "";
 
-            <div class="border rounded p-4 mb-3 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
-                <h3 class="text-lg font-semibold">
-                    <a href="@url" class="text-blue-600 dark:text-blue-400 hover:underline">@name</a>
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-300">@description</p>
-            </div>
+                <div class="border rounded p-4 mb-3 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
+                    <h3 class="text-lg font-semibold">
+                        <a href="@url" class="text-secondary dark:text-secondary hover:underline" aria-label="Go to @name">
+                            @name
+                        </a>
+                    </h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">@description</p>
+                </div>
+            }
         }
 
         @* ✅ Phân trang sau danh sách *@
         @if (totalPages > 1)
         {
-            <nav class="flex flex-wrap items-center justify-center gap-2 mt-6">
+            <nav class="flex flex-wrap items-center justify-center gap-2 mt-6" aria-label="Pagination">
                 @if (page > 1)
                 {
                     <a href="?q=@query&page=@(page - 1)"
                        class="flex items-center gap-1 px-3 py-1 rounded border text-sm transition-colors
-                              bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700">
+                              bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-primary dark:hover:bg-gray-700"
+                       aria-label="Previous page">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
-                        Trước
                     </a>
                 }
 
                 <a href="?q=@query&page=1"
                    class="px-3 py-1 rounded border text-sm transition-colors
-                          @(page == 1 ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700")">
+                          @(page == 1 ? "bg-primary text-white border-blue-600" : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-primary dark:hover:bg-gray-700")"
+                   aria-label="Page 1">
                     1
                 </a>
 
@@ -87,7 +110,8 @@
                 {
                     <a href="?q=@query&page=@i"
                        class="px-3 py-1 rounded border text-sm transition-colors
-                              @(i == page ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700")">
+                              @(i == page ? "bg-secondary text-white border-blue-600" : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-primary dark:hover:bg-gray-700")"
+                       aria-label="Page @i">
                         @i
                     </a>
                 }
@@ -99,7 +123,8 @@
 
                 <a href="?q=@query&page=@totalPages"
                    class="px-3 py-1 rounded border text-sm transition-colors
-                          @(page == totalPages ? "bg-blue-600 text-white border-blue-600" : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700")">
+                          @(page == totalPages ? "bg-secondary text-white border-blue-600" : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-primary dark:hover:bg-gray-700")"
+                   aria-label="Page @totalPages">
                     @totalPages
                 </a>
 
@@ -107,8 +132,8 @@
                 {
                     <a href="?q=@query&page=@(page + 1)"
                        class="flex items-center gap-1 px-3 py-1 rounded border text-sm transition-colors
-                              bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700">
-                        Sau
+                              bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-primary dark:hover:bg-gray-700"
+                       aria-label="Next page">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
@@ -119,6 +144,6 @@
     }
     else
     {
-        <p class="text-gray-500">@searchResultsPlaceHolder</p>
+        <p class="text-gray-500 dark:text-gray-400" role="alert">@searchResultsPlaceHolder</p>
     }
 </div>
