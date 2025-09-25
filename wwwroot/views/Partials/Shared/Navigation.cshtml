@@ -1,203 +1,235 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
 @using Umbraco.Extensions
 @inject IPublishedValueFallback PublishedValueFallback
+@using Microsoft.AspNetCore.Html
 
 @{
-    var homePage = Umbraco.AssignedContentItem?.Root();
-    var menuItems = homePage?.Children()
+    if (Umbraco.AssignedContentItem == null || Umbraco.AssignedContentItem.Root() == null)
+    {
+        <div class="text-red-500">Error: Page or homepage not available.</div>
+        return;
+    }
+
+    var homePage = Umbraco.AssignedContentItem.Root();
+    var menuItems = homePage.Children()
         .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
         .ToArray();
+    var maxDepth = 3;
 }
+<div class="relative md:hidden">
+    <input type="checkbox" id="menu-toggle" class="hidden peer">
+    <label for="menu-toggle" class="text-gray-900 dark:text-white cursor-pointer p-2" aria-label="Toggle menu">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+        </svg>
+    </label>
 
-<nav class="hidden md:flex items-center space-x-6">
-    <div class="flex items-center justify-between w-full">
-        @if (menuItems?.Any() == true)
-        {
-            <ul class="flex space-x-6">
-                @foreach (var item in menuItems)
+    <div id="mobile-menu"
+         class="peer-checked:block hidden fixed inset-0 top-16 bg-white dark:bg-gray-900 z-40 overflow-y-auto
+                transition-all duration-300 ease-out transform scale-y-95 opacity-0
+                peer-checked:scale-y-100 peer-checked:opacity-100 origin-top">
+        <div class="px-4 pt-4 pb-6 space-y-2">
+            @{
+                var delay = 0;
+                foreach (var item in menuItems)
                 {
-                    var isActive = IsActive(item);
-                    
-                    <li class="group relative">
-                        <a href="@item.Url()" 
-                           class="@(isActive ? "text-primary" : "text-gray-800 dark:text-slogan") 
-                                  font-medium transition-colors hover:text-primary dark:hover:text-primary">
-                            @item.Name
-                        </a>
-                        @await Html.PartialAsync("Partials/Shared/SubMenu", item)
-                    </li>
-                }
-            </ul>
-        }
-        <!-- Thêm nút Search cho desktop -->
-        <div class="flex items-center">
-            <button type="button" class="search-toggle text-gray-800 dark:text-slogan hover:text-primary focus:outline-none" aria-label="Open search">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M21 21l-4.35-4.35m0 0a7 7 0 111.414-1.414L21 21z"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-</nav>
+                    var hasChildren = item.Children()?.Any(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide")) == true;
+                    var isActive = item.IsAncestorOrSelf(Umbraco.AssignedContentItem);
+                    var activeClass = isActive ? "menu-item-active" : "";
+                    var url = item.Url() ?? "#";
+                    var name = item.Name ?? "Unnamed";
+                    var toggleId = $"toggle-{item.Id}";
+                    var delayClass = $"delay-[{delay}ms]";
+                    delay += 50;
 
-<nav class="md:hidden bg-white text-gray-800 dark:bg-dark dark:text-slogan shadow-xl">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-300 dark:border-gray-700">
-        <div class="text-lg font-semibold"></div>
-        <div class="flex items-center space-x-4">
-            <!-- Thêm nút Search cho mobile -->
-            <button type="button" class="search-toggle text-gray-800 dark:text-slogan hover:text-primary focus:outline-none" aria-label="Open search">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M21 21l-4.35-4.35m0 0a7 7 0 111.414-1.414L21 21z"/>
-                </svg>
-            </button>
-            <button type="button" class="mobile-menu-button text-gray-800 dark:text-slogan focus:outline-none">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-
-    <div class="mobile-menu hidden px-4 py-2">
-        @if (menuItems?.Any() == true)
-        {
-            <ul class="space-y-2">
-                @foreach (var item in menuItems)
-                {
-                    var isActive = IsActive(item);
-                    var children = item.Children()
-                        .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
-                        .ToArray();
-
-                    <li>
-                        <div class="flex justify-between items-center">
-                            <a href="@item.Url()" 
-                               class="block font-medium px-2 py-2 rounded transition-colors 
-                                      @(isActive ? "text-primary" : "text-gray-800 dark:text-slogan hover:text-primary dark:hover:text-primary")">
-                                @item.Name
-                            </a>
-                            @if (children.Any())
-                            {
-                                <button type="button" class="submenu-toggle text-gray-800 dark:text-slogan focus:outline-none" data-target="submenu-@item.Id">
-                                    <svg class="w-4 h-4 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M19 9l-7 7-7-7"/>
-                                    </svg>
-                                </button>
-                            }
+                    if (hasChildren)
+                    {
+                        <div class="relative transition-all duration-300 ease-out @delayClass">
+                            <input type="checkbox" id="@toggleId" class="hidden peer">
+                            <label for="@toggleId" class="flex justify-between items-center menu-item @activeClass cursor-pointer pr-8">
+                                <span>@name</span>
+                            </label>
+                            <svg class="absolute right-2 top-2 h-4 w-4 text-gray-500 dark:text-gray-300 transform transition-transform duration-300 peer-checked:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                            <div class="peer-checked:max-h-screen max-h-0 overflow-hidden transition-all duration-300 ease-in-out pl-4">
+                                @RenderMobileSubMenu(item, PublishedValueFallback, Umbraco.AssignedContentItem, maxDepth, 2)
+                            </div>
                         </div>
-
-                        @if (children.Any())
-                        {
-                            <ul id="submenu-@item.Id" class="hidden ml-4 mt-2 space-y-1 transition-all duration-300 ease-out">
-                                @foreach (var child in children)
-                                {
-                                    var isChildActive = IsActive(child);
-                                    
-                                    <li>
-                                        <a href="@child.Url()" 
-                                           class="block px-2 py-1 rounded text-sm transition-colors 
-                                                  @(isChildActive ? "text-primary" : "text-gray-800 dark:text-slogan hover:text-primary dark:hover:text-primary")">
-                                            @child.Name
-                                        </a>
-                                    </li>
-                                }
-                            </ul>
-                        }
-                    </li>
+                    }
+                    else
+                    {
+                        <a href="@url" class="menu-item @activeClass transition-all duration-300 ease-out @delayClass">@name</a>
+                    }
                 }
-            </ul>
-        }
-    </div>
-</nav>
+            }
 
-<!-- Search Input Overlay -->
-<div id="search-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen">
-        <div class="bg-white dark:bg-dark p-4 rounded-lg w-full max-w-md mx-4">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-800 dark:text-slogan">Search</h2>
-                <button type="button" class="search-close text-gray-800 dark:text-slogan focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M6 18L18 6M6 6l12 12"/>
+            <!-- Search Icon -->
+            <form method="get" action="/search" class="relative w-full transition-all duration-300 ease-out delay-[@(delay)]ms">
+                <input type="text"
+                    name="q"
+                    placeholder="Tìm kiếm..."
+                    class="w-full px-4 py-2 pr-10 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200" />
+
+                <button type="submit"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300 hover:text-primary transition-colors">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </button>
-            </div>
-            <form id="search-form" class="flex items-center">
-                <input type="text" id="search-input" placeholder="Search..." 
-                       class="w-full px-4 py-2 rounded-l-md border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-slogan bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-primary">
-                <button type="submit" 
-                        class="px-4 py-2 bg-primary text-white rounded-r-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary">
-                    Search
-                </button>
             </form>
+
+
+            <!-- Login Icon -->
+            <a href="/login/" class="flex items-center gap-2 menu-item transition-all duration-300 delay-[@(delay + 50)]ms ease-out">
+                <svg class="h-6 w-6 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H3m12 0l-4-4m4 4l-4 4m6-10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Đăng nhập</span>
+            </a>
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const menuBtn = document.querySelector(".mobile-menu-button");
-        const menu = document.querySelector(".mobile-menu");
-        menuBtn?.addEventListener("click", () => {
-            menu?.classList.toggle("hidden");
-        });
-
-        const toggles = document.querySelectorAll(".submenu-toggle");
-        toggles.forEach(btn => {
-            btn.addEventListener("click", () => {
-                const targetId = btn.getAttribute("data-target");
-                const submenu = document.getElementById(targetId);
-                const icon = btn.querySelector("svg");
-                submenu?.classList.toggle("hidden");
-                icon?.classList.toggle("rotate-180");
-            });
-        });
-
-        // Search Overlay Toggle
-        const searchToggles = document.querySelectorAll(".search-toggle");
-        const searchOverlay = document.getElementById("search-overlay");
-        const searchForm = document.getElementById("search-form");
-        const searchInput = document.getElementById("search-input");
-        const searchClose = document.querySelector(".search-close");
-
-        searchToggles.forEach(btn => {
-            btn.addEventListener("click", () => {
-                searchOverlay?.classList.remove("hidden");
-                searchInput?.focus();
-            });
-        });
-
-        searchClose?.addEventListener("click", () => {
-            searchOverlay?.classList.add("hidden");
-        });
-
-        searchForm?.addEventListener("submit", (e) => {
-            e.preventDefault();
-            const query = searchInput?.value?.toLowerCase() || "";
-            if (query) {
-                window.location.href = `/search?q=${encodeURIComponent(query)}`;
-            }
-            searchOverlay?.classList.add("hidden");
-        });
-
-        // Close overlay when clicking outside
-        searchOverlay?.addEventListener("click", (e) => {
-            if (e.target === searchOverlay) {
-                searchOverlay.classList.add("hidden");
-            }
-        });
-    });
-</script>
-
 @functions {
-    public bool IsActive(IPublishedContent item)
+    private IHtmlContent RenderMobileSubMenu(IPublishedContent parent, IPublishedValueFallback fallback, IPublishedContent current, int maxDepth, int currentDepth)
     {
-        if (item == null) return false;
-        return Model.Path?.Split(',').Contains(item.Id.ToString()) ?? false;
+        if (parent == null || currentDepth > maxDepth) return Html.Raw("");
+
+        var subItems = parent.Children()
+            .Where(x => x.IsVisible(fallback) && !x.Value<bool>("naviHide"))
+            .ToArray();
+
+        if (!subItems.Any()) return Html.Raw("");
+
+        var builder = new HtmlContentBuilder();
+        builder.AppendHtml("<div class='pl-4 space-y-1'>");
+
+        foreach (var item in subItems)
+        {
+            var hasChildren = item.Children()?.Any(x => x.IsVisible(fallback) && !x.Value<bool>("naviHide")) == true && currentDepth < maxDepth;
+            var isActive = item.IsAncestorOrSelf(current);
+            var activeClass = isActive ? "menu-item-active" : "";
+            var url = item.Url() ?? "#";
+            var name = item.Name ?? "Unnamed";
+            var toggleId = $"toggle-sub-{item.Id}";
+
+            if (hasChildren)
+            {
+                builder.AppendHtml($"<div class='relative'>");
+                builder.AppendHtml($"<input type='checkbox' id='{toggleId}' class='hidden peer'>");
+                builder.AppendHtml($"<label for='{toggleId}' class='flex justify-between items-center menu-item {activeClass} cursor-pointer pr-8'>");
+                builder.AppendHtml($"<span>{name}</span>");
+                builder.AppendHtml("</label>");
+                builder.AppendHtml(@"<svg class='absolute right-2 top-2 h-4 w-4 text-gray-500 dark:text-gray-300 transform transition-transform duration-300 peer-checked:rotate-90' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                    <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5l7 7-7 7' />
+                </svg>");
+                builder.AppendHtml("<div class='peer-checked:max-h-screen max-h-0 overflow-hidden transition-all duration-300 ease-in-out pl-4'>");
+                builder.AppendHtml(RenderMobileSubMenu(item, fallback, current, maxDepth, currentDepth + 1));
+                builder.AppendHtml("</div>");
+                builder.AppendHtml("</div>");
+            }
+            else
+            {
+                builder.AppendHtml($"<a href='{url}' class='menu-item {activeClass}'>{name}</a>");
+            }
+        }
+
+        builder.AppendHtml("</div>");
+        return builder;
     }
 }
+
+<ul class="hidden md:flex items-center gap-6">
+    @foreach (var item in menuItems)
+    {
+        var isActive = item.IsAncestorOrSelf(Umbraco.AssignedContentItem);
+        var activeClass = isActive ? "menu-item-active" : "";
+        var url = item.Url() ?? "#";
+        var name = item.Name ?? "Unnamed";
+        var hasChildren = item.Children()?.Any(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide")) == true;
+
+        <li class="relative group">
+            <a href="@url" class="menu-item @activeClass">@name</a>
+
+            @if (hasChildren)
+            {
+                <ul class="absolute top-full left-0 mt-0 bg-white dark:bg-gray-900 shadow-lg rounded-md min-w-[12rem] z-50
+                           hidden group-hover:block transition-all duration-200 ease-out">
+                    @foreach (var child in item.Children().Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide")))
+                    {
+                        var childUrl = child.Url() ?? "#";
+                        var childName = child.Name ?? "Unnamed";
+                        var childActive = child.IsAncestorOrSelf(Umbraco.AssignedContentItem) ? "menu-item-active" : "";
+                        var hasGrandChildren = child.Children()?.Any(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide")) == true;
+                        
+                        <li class="relative menu-sub-item">
+                            <a href="@childUrl" class="menu-item @childActive flex items-center justify-between">
+                                <span>@childName</span>
+                                @if (hasGrandChildren)
+                                {
+                                    <svg class="h-4 w-4 text-gray-500 dark:text-gray-300 transition-transform duration-300 menu-sub-item-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                }
+                            </a>
+                            
+                            @if (hasGrandChildren)
+                            {
+                                <ul class="absolute top-0 left-full bg-white dark:bg-gray-900 shadow-lg rounded-md min-w-[12rem] z-50
+                                           hidden menu-sub-item-hover:block transition-all duration-200 ease-out">
+                                    @foreach (var grand in child.Children().Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide")))
+                                    {
+                                        var grandUrl = grand.Url() ?? "#";
+                                        var grandName = grand.Name ?? "Unnamed";
+                                        var grandActive = grand.IsAncestorOrSelf(Umbraco.AssignedContentItem) ? "menu-item-active" : "";
+
+                                        <li>
+                                            <a href="@grandUrl" class="menu-item @grandActive">@grandName</a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </li>
+    }
+
+    <li class="flex items-center gap-4 relative group">
+        <button class="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-colors" aria-label="Tìm kiếm">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+        </button>
+        <form method="get" action="/search"
+              class="absolute top-full right-0 mt-0 w-64 bg-white dark:bg-gray-900 shadow-lg rounded-md p-2
+                      hidden group-hover:flex flex-col pointer-events-auto transition-all duration-300 ease-out z-50">
+            <input type="text"
+                   name="q"
+                   placeholder="Tìm kiếm..."
+                   class="w-full px-3 py-2 pr-10 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" />
+            <button type="submit"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300 hover:text-primary">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </button>
+        </form>
+        <a href="/login/" class="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-colors" aria-label="Đăng nhập">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12H3m12 0l-4-4m4 4l-4 4m6-10a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </a>
+        <a href="/download/" class="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-colors" aria-label="Tải về">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+            </svg>
+        </a>
+    </li>
+</ul>

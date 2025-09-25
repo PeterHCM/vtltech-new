@@ -1,4 +1,3 @@
-// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -22,16 +21,38 @@ module.exports = {
       boxShadow: {
         '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
       },
+      maxHeight: {
+        screen: '100vh',
+        full: '100%',
+        menu: '500px',
+      },
+      transitionDelay: {
+        '0': '0ms',
+        '50': '50ms',
+        '100': '100ms',
+        '150': '150ms',
+        '200': '200ms',
+        '250': '250ms',
+        '300': '300ms',
+      },
+      animation: {
+        slideDown: 'slideDown 0.3s ease-out forwards',
+      },
+      keyframes: {
+        slideDown: {
+          '0%': { transform: 'scaleY(0.95)', opacity: '0' },
+          '100%': { transform: 'scaleY(1)', opacity: '1' },
+        },
+      },
       typography: (theme) => ({
         DEFAULT: {
           css: {
-            // Cấu hình cho Light Mode
             color: theme('colors.gray.800'),
             'h1, h2, h3, h4, h5, h6': {
               color: theme('colors.gray.900'),
             },
             'a': {
-              'color': theme('colors.blue.600'),
+              color: theme('colors.blue.600'),
               '&:hover': {
                 color: theme('colors.blue.800'),
               },
@@ -47,16 +68,10 @@ module.exports = {
             'li': {
               color: theme('colors.gray.800'),
             },
-            // Loại bỏ dấu ngoặc kép trên code block inline
-            'code::before': {
-              content: '""',
-            },
-            'code::after': {
-              content: '""',
-            },
+            'code::before': { content: '""' },
+            'code::after': { content: '""' },
           },
         },
-        // Cấu hình cho Dark Mode. Tailwind tự động thêm class 'dark'
         dark: {
           css: {
             color: theme('colors.gray.200'),
@@ -67,7 +82,7 @@ module.exports = {
               color: theme('colors.white'),
             },
             'a': {
-              'color': theme('colors.blue.400'),
+              color: theme('colors.blue.400'),
               '&:hover': {
                 color: theme('colors.blue.300'),
               },
@@ -77,17 +92,27 @@ module.exports = {
               color: theme('colors.gray.400'),
             },
             'ul, ol': {
-                'list-style-type': 'disc',
-                'padding-left': '1.5rem',
+              'list-style-type': 'disc',
+              'padding-left': '1.5rem',
             },
             'li': {
-                color: theme('colors.gray.200'),
+              color: theme('colors.gray.200'),
             },
           },
         },
       }),
     },
   },
+  safelist: [
+    'peer-checked:rotate-90',
+    'delay-[0ms]',
+    'delay-[50ms]',
+    'delay-[100ms]',
+    'delay-[150ms]',
+    'delay-[200ms]',
+    'delay-[250ms]',
+    'delay-[300ms]',
+  ],
   plugins: [
     require('@tailwindcss/line-clamp'),
     require('@tailwindcss/typography'),
