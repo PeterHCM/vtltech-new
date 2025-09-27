@@ -12,7 +12,7 @@
 
 @if (content != null)
 {
-    <section class="bg-white text-gray-800 dark:bg-dark dark:text-slogan py-18 px-6 shadow-xl">
+    <section class="bg-white text-gray-800 dark:bg-dark dark:text-white py-18 px-6 shadow-xl">
         <div class="max-w-4xl mx-auto text-center">
             @if (!string.IsNullOrWhiteSpace(title))
             {
@@ -21,7 +21,7 @@
 
             @if (!string.IsNullOrWhiteSpace(introText))
             {
-                <p class="text-lg mb-6 text-gray-600 dark:text-gray-400">@introText</p>
+                <p class="text-lg mb-6 text-gray-600 dark:text-white text-justify">@introText</p>
             }
 
             @if (!string.IsNullOrWhiteSpace(ctaUrl) && !string.IsNullOrWhiteSpace(buttonText))

@@ -1,23 +1,21 @@
-@using Umbraco.Cms.Web.Common.PublishedModels
 @using Umbraco.Cms.Core.Models.Blocks
-@using Umbraco.Extensions
-@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IntranetHomePage>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<ArticlePage>
 
 @{
-    Layout = "intranet.cshtml";
-
+    Layout = "layout.cshtml";
     var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { "heroBanner", "Partials/blocklist/heroBanner" },
         { "textBlock", "Partials/blocklist/textBlock" },
-        { "ctaBlock", "Partials/blocklist/ctaBlock" }, 
-        { "imageBlock", "Partials/blocklist/imageBlock" }
+        { "ctaBlock", "Partials/blocklist/ctaBlock" },
+        { "internalDocument", "Partials/blocklist/internalDocument" },
+        { "imageBlock", "Partials/blocklist/imageBlock" },
+        { "linkList", "Partials/blocklist/linkList" }     
     };
-
-    var blocks = Model.Value<BlockListModel>("contentBlocks");
+    var blocks = Model.ContentBlocks;
 }
-
-<section class="homepage">
+@await Html.PartialAsync("Partials/Shared/banner", Model)
+<section class="intranet-article-page px-6 md:px-12 lg:px-24">
     <div class="container">
         @foreach (var block in blocks ?? Enumerable.Empty<BlockListItem>())
         {

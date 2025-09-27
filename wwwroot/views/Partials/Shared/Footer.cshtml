@@ -21,11 +21,14 @@
         ?? "© 2025 Viet Thang Loi Technology Company Limited";
     var contactUs = settings?.Value<string>("contactUs") ?? "Liên hệ với chúng tôi";
     var followUs = settings?.Value<string>("followUs") ?? "Theo dõi chúng tôi";
-   
-    // Use the page URL for the QR code for a more practical application
-    var fullUrl = Umbraco.AssignedContentItem.Url(mode: UrlMode.Absolute);
+    var request = Context?.Request;
+    var fullUrl = string.Concat(
+        request?.Scheme, "://",
+        request?.Host.Value,
+        request?.Path.Value,
+        request?.QueryString.Value
+    );
     var currentDomain = Context.Request.Host.Value;
-   
     var linkAlias = currentDomain.Contains("intranet") ? "intranetFooterLinks" : "footerLinks";
     var links = settings?.Value<IEnumerable<Link>>(linkAlias) ?? Enumerable.Empty<Link>();
     var qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={fullUrl}";
@@ -47,20 +50,7 @@
             <h3 class="font-semibold text-lg mb-4">@footerLinksName</h3>
             @if (links != null && links.Any())
             {
-                <ul class="space-y-2">
-                    @foreach (var link in links)
-                    {
-                        var url = link.Url;
-                        var name = link.Name;
-                        var target = link.Target;
-                        <li class="hover:text-primary transition-colors flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                            <a href="@url" target="@target">@name</a>
-                        </li>
-                    }
-                </ul>
+                @Html.Partial("Partials/Shared/LinkList", links)                
             }
         </div>
         <!-- Cột 3: Thông tin liên hệ + QR + Mạng xã hội -->

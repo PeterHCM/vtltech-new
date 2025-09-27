@@ -5,20 +5,17 @@
 
 @{
     var settings = Umbraco.ContentAtRoot().FirstOrDefault(x => x.ContentType.Alias == "companySettings");
-
     if (settings == null)
     {
         return; // Dừng lại nếu không tìm thấy cài đặt
     }
-
     var companyName = settings.Value<string>("companyName") ?? "Viet Thang Loi Technology Company Limited";
-    
     // Lấy logo từ Multi Picker, chỉ lấy item đầu tiên
     var websiteLogoLight = settings.Value<IEnumerable<IPublishedContent>>("websiteLogoLight")?.FirstOrDefault();
     var websiteLogoDark = settings.Value<IEnumerable<IPublishedContent>>("websiteLogoDark")?.FirstOrDefault();
 }
 
-<header class="bg-white text-gray-800 dark:bg-dark dark:text-slogan shadow-xl py-4 px-6 flex justify-between items-center sticky top-0 z-50">
+<header class="bg-gray-100 text-gray-800 dark:bg-dark dark:text-slogan shadow-xl py-4 px-6 flex justify-between items-center sticky top-0 z-50">
     <div class="flex items-center">
         @if (websiteLogoLight != null)
         {
@@ -31,5 +28,5 @@
             </a>
         }
     </div>
-    @await Html.PartialAsync("Partials/Shared/Navigation")
+    @await Html.PartialAsync("Partials/Shared/Navigation", Model)
 </header>

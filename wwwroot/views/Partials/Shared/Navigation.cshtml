@@ -8,13 +8,29 @@
     {
         <div class="text-red-500">Error: Page or homepage not available.</div>
         return;
-    }
-
+    }    
     var homePage = Umbraco.AssignedContentItem.Root();
     var menuItems = homePage.Children()
         .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
         .ToArray();
     var maxDepth = 3;
+    var currentDomain = Context.Request.Host.Value;
+    var isIntranet = currentDomain.Contains("intranet");
+    var selectedSearchGuid = "cb455312-8402-4f8a-80ec-97f0d0c36c8b";
+    if (isIntranet)
+    {   
+        selectedSearchGuid = "8d9393a2-028a-4b82-ba66-91aa42f2f753";
+    }
+    Guid searchPageGuid = new Guid(selectedSearchGuid);
+    var searchPageNode = Umbraco.Content(searchPageGuid);
+    string searchPageUrl = searchPageNode?.Url() ?? "/search"; // Default fallback URL
+    Guid loginPageGuid = new Guid("00af5c49-5550-46f9-b528-e981426a70f6");
+    var loginPageNode = Umbraco.Content(loginPageGuid);
+    string loginPageUrl = loginPageNode?.Url() ?? "/login";
+    if (searchPageNode != null)
+    {
+        searchPageUrl = searchPageNode.Url();
+    }
 }
 <div class="relative md:hidden">
     <input type="checkbox" id="menu-toggle" class="hidden peer">
@@ -63,9 +79,9 @@
                     }
                 }
             }
-
+            <div class="flex-grow flex justify-end items-center">
             <!-- Search Icon -->
-            <form method="get" action="/search" class="relative w-full transition-all duration-300 ease-out delay-[@(delay)]ms">
+            <form method="get" action="@searchPageUrl" class="relative w-full transition-all duration-300 ease-out delay-[@(delay)]ms">
                 <input type="text"
                     name="q"
                     placeholder="Tìm kiếm..."
@@ -79,15 +95,13 @@
                     </svg>
                 </button>
             </form>
-
-
-            <!-- Login Icon -->
-            <a href="/login/" class="flex items-center gap-2 menu-item transition-all duration-300 delay-[@(delay + 50)]ms ease-out">
+            <!-- Login Icon -->            
+            <a href="loginPageUrl" class="flex items-center gap-2 menu-item transition-all duration-300 delay-[@(delay + 50)]ms ease-out">
                 <svg class="h-6 w-6 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H3m12 0l-4-4m4 4l-4 4m6-10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span>Đăng nhập</span>
             </a>
+            </div>
         </div>
     </div>
 </div>
@@ -204,7 +218,7 @@
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
         </button>
-        <form method="get" action="/search"
+        <form method="get" action="@searchPageUrl"
               class="absolute top-full right-0 mt-0 w-64 bg-white dark:bg-gray-900 shadow-lg rounded-md p-2
                       hidden group-hover:flex flex-col pointer-events-auto transition-all duration-300 ease-out z-50">
             <input type="text"
@@ -219,17 +233,10 @@
                 </svg>
             </button>
         </form>
-        <a href="/login/" class="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-colors" aria-label="Đăng nhập">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M15 12H3m12 0l-4-4m4 4l-4 4m6-10a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </a>
-        <a href="/download/" class="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-colors" aria-label="Tải về">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-            </svg>
+        <a href="@loginPageUrl" class="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-colors" aria-label="Đăng nhập">
+            <svg class="h-6 w-6 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>            
         </a>
     </li>
 </ul>

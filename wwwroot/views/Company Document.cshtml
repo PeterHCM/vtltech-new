@@ -1,0 +1,131 @@
+@using Umbraco.Cms.Web.Common.PublishedModels;
+@using Umbraco.Cms.Core.Models
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+	Layout = "layout.cshtml";
+}
+@{
+    var settings = Umbraco.ContentAtRoot().FirstOrDefault(x => x.ContentType.Alias == "companySettings");
+    var websiteLogo = settings.Value<IEnumerable<IPublishedContent>>("websiteLogoDark")?.FirstOrDefault() ?? settings.Value<IEnumerable<IPublishedContent>>("websiteLogoLight")?.FirstOrDefault(); // Fallback light nếu dark null
+    var companyName = settings?.Value<string>("companyName") ?? "Viet Thang Loi Technology Company Limited";
+	var documentTitle = Model.Value<string>("title");
+    var description = Model.Value<string>("description");
+    var documentId = Model.Value<string>("documentId");
+    var revision = Model.Value<string>("revision");
+    var publicationDate = Model.Value<DateTime>("publicationDate");
+    var lastRevisedDate = Model.Value<DateTime>("lastRevisedDate");
+    var author = Model.Value<string>("author");
+    var approvalStatus = Model.Value<string>("approvalStatus");
+    var documentType = Model.Value<string>("documentType");
+    var departments = Model.Value<string>("departments");
+	var body = Model.Value<string>("body");
+    
+    string GetDepartmentName(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return "Không xác định";
+
+        code = code.ToUpperInvariant();
+        if (code.Contains("AG")) return "Toàn công ty";
+        if (code.Contains("AHR")) return "Hành chính & Nhân sự";
+        if (code.Contains("SAL")) return "Kinh doanh";
+        if (code.Contains("ACC")) return "Kế toán";
+        if (code.Contains("PUR")) return "Mua hàng";
+        return code;
+    }
+
+    string GetDocumentTypeName(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return "Không xác định";
+
+        code = code.ToUpperInvariant();
+        if (code.Contains("MNL")) return "Sổ tay";
+        if (code.Contains("PLY")) return "Quy chế";
+        if (code.Contains("PCS")) return "Quy trình";
+        if (code.Contains("INS")) return "Hướng dẫn";
+        if (code.Contains("FRM")) return "Biểu mẫu";
+        if (code.Contains("LST")) return "Danh mục";
+        if (code.Contains("RPT")) return "Báo cáo";
+        return code;
+    }
+
+}
+@await Html.PartialAsync("Partials/Shared/banner")
+<section class="mx-auto py-8 px-6 md:px-12 lg:px-24">    
+    @if (!string.IsNullOrEmpty(documentTitle))
+    {
+        <h2 class="text-2xl md:text-3xl font-extrabold text-secondary dark:text-secondary mb-2">@documentTitle</h2>
+    }
+    @if (!string.IsNullOrEmpty(description))
+    {
+        <p class="text-lg text-gray-600 dark:text-gray-400 mb-8">@description</p>
+    }
+    @if (!string.IsNullOrEmpty(documentId) || !string.IsNullOrEmpty(documentType) || !string.IsNullOrEmpty(departments) || !string.IsNullOrEmpty(approvalStatus) || !string.IsNullOrEmpty(revision) || !string.IsNullOrEmpty(author) || publicationDate != null || lastRevisedDate != null)
+    {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 p-6 my-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            @if (!string.IsNullOrEmpty(documentId))
+            {
+                <div>
+                    <strong class="block text-sm font-semibold text-gray-500 dark:text-gray-400">Mã tài liệu</strong>
+                    <span class="block mt-1">@documentId</span>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(revision))
+            {
+                <div>
+                    <strong class="block text-sm font-semibold text-gray-500 dark:text-gray-400">Lần ban hành</strong>
+                    <span class="block mt-1">@revision</span>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(documentType))
+            {
+                <div>
+                    <strong class="block text-sm font-semibold text-gray-500 dark:text-gray-400">Loại Tài liệu</strong>
+                    <span class="block mt-1">@GetDocumentTypeName(documentType)</span>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(departments))
+            {
+                <div>
+                    <strong class="block text-sm font-semibold text-gray-500 dark:text-gray-400">Phòng ban</strong>
+                    <span class="block mt-1">@GetDepartmentName(departments)</span>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(approvalStatus))
+            {
+                <div>
+                    <strong class="block text-sm font-semibold text-gray-500 dark:text-gray-400">Tình trạng Phê duyệt</strong>
+                    <span class="block mt-1">@approvalStatus</span>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(author))
+            {
+                <div class="hidden">
+                    <strong class="block text-sm font-semibold text-gray-500 dark:text-gray-400">Tác giả</strong>
+                    <span class="block mt-1">@author</span>
+                </div>
+            }
+            @if (publicationDate != null)
+            {
+                <div>
+                    <strong class="block text-sm font-semibold text-gray-500 dark:text-gray-400">Ngày Ban hành</strong>
+                    <span class="block mt-1">@publicationDate.ToString("dd/MM/yyyy")</span>
+                </div>
+            }
+            @if (lastRevisedDate != null)
+            {
+                <div>
+                    <strong class="block text-sm font-semibold text-gray-500 dark:text-gray-400">Ngày Sửa đổi Gần nhất</strong>
+                    <span class="block mt-1">@lastRevisedDate.ToString("dd/MM/yyyy")</span>
+                </div>
+            }
+        </div>
+    }
+    @if (body != null && !string.IsNullOrEmpty(body.ToString()))
+    {
+        <div class="prose dark:prose-dark max-w-none text-justify">
+            @Html.Raw(body)
+        </div>
+    }
+</section>

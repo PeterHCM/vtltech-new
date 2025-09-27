@@ -1,9 +1,9 @@
 @using Umbraco.Cms.Core.Models.Blocks
 @using Umbraco.Cms.Core.Models.PublishedContent
 @inherits UmbracoViewPage<BlockListItem>
-
+@using System;
+@using System.Linq;
 @{
-    // Kiểm tra Model.Content
     var content = Model?.Content;
     if (content == null)
     {
@@ -13,7 +13,6 @@
         return;
     }
 
-    // Lấy dữ liệu từ content
     var menuTitle = content.Value<string>("title") ?? "Danh bạ tài liệu";
     var departmentSelected = content.Value<string>("department")?.ToLowerInvariant();
     var selectAll = content.Value<bool>("selectAll");
@@ -30,7 +29,6 @@
         if (code.Contains("PUR")) return "Mua hàng";
         return code;
     }
-
     string GetDocumentTypeName(string code)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -42,6 +40,8 @@
         if (code.Contains("PCS")) return "Quy trình";
         if (code.Contains("INS")) return "Hướng dẫn";
         if (code.Contains("FRM")) return "Biểu mẫu";
+        if (code.Contains("LST")) return "Danh mục";
+        if (code.Contains("RPT")) return "Báo cáo";
         return code;
     }
     // Lấy tất cả tài liệu
@@ -52,11 +52,14 @@
 
     // Lọc tài liệu
     var filteredDocs = selectAll
-        ? allCompanyDocuments.OrderBy(doc => doc?.Value<string>("documentId") ?? "").ToList()
-        : allCompanyDocuments
-            .Where(doc => !string.IsNullOrEmpty(departmentSelected) && doc?.Value<string>("departments")?.ToLowerInvariant() == departmentSelected)
-            .OrderBy(doc => doc?.Value<string>("documentId") ?? "")
-            .ToList();
+    ? allCompanyDocuments
+        .OrderBy(doc => doc?.Value<string>("documentId") ?? "")
+        .ToList()
+    : allCompanyDocuments
+        .Where(doc => !string.IsNullOrEmpty(departmentSelected) && 
+                      doc?.Value<string>("departments")?.ToLowerInvariant() == departmentSelected?.ToLowerInvariant())
+        .OrderBy(doc => doc?.Value<string>("documentId") ?? "")
+        .ToList();
     // Nhóm tài liệu
     var groupedDocs = selectAll
         ? filteredDocs

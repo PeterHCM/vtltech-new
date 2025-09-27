@@ -6,17 +6,12 @@
 @{
     var content = Model.Content;
     var banners = content.Value<BlockListModel>("banners");
-    
-    // Lấy URL của tất cả các ảnh và chuyển thành mảng C#
     var imageUrls = banners.Select(b => b.Content.Value<IEnumerable<IPublishedContent>>("images")?.FirstOrDefault()?.Url() ?? "https://placehold.co/1920x1080/4a4a4a/ffffff?text=No+Image").ToList();
-    
-    // Tạo chuỗi JSON thủ công để JavaScript có thể đọc được
     var imageUrlsJson = System.Text.Json.JsonSerializer.Serialize(imageUrls);
 }
-
 @if (banners != null && banners.Any())
 {
-    <section id="hero-carousel-container" class="relative w-screen overflow-hidden h-[500px] -mx-6 md:-mx-12 lg:-mx-24">
+    <section id="hero-carousel-container" class="relative w-full overflow-hidden h-[500px]">
     @if (banners != null && banners.Any())
     {
         <div id="carousel-track" class="relative flex w-full h-full transition-transform duration-700 ease-in-out">

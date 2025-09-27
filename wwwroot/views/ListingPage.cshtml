@@ -1,6 +1,7 @@
-@using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @using Umbraco.Extensions
-@inherits UmbracoViewPage
 @inject IPublishedValueFallback PublishedValueFallback
 
 @{
@@ -10,32 +11,65 @@
     var items = Model.Children()
         .Where(x => x.IsVisible(PublishedValueFallback) && !x.Value<bool>("naviHide"))
         .ToArray();
-
     var viewMoreText = Umbraco.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
     var noContentText = Umbraco.GetDictionaryValue("noContentText") ?? "Không có nội dung để hiển thị.";
+    var pageDescription = Model.Value<string>("description");
+    var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {        
+        { "textBlock", "Partials/blocklist/textBlock" },
+        { "ctaBlock", "Partials/blocklist/ctaBlock" }, 
+        { "imageBlock", "Partials/blocklist/imageBlock" },
+        { "documentMenu", "Partials/blocklist/documentMenu" },
+        { "linkList", "Partials/blocklist/linkList" }
+    };
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
 }
-
-<section class="mx-auto py-8">
-    <h1 class="text-3xl font-bold text-primary mb-6">@pageTitle</h1>
-
+@await Html.PartialAsync("Partials/Shared/banner", Model)
+<section class="mx-auto py-8 px-6 md:px-12 lg:px-24">    
     @if (items.Any())
     {
         <div class="grid gap-6 md:grid-cols-2">
             @foreach (var item in items)
             {
                 var title = item.Name;
-                var intro = item.Value<string>("introtext");
-
-                <article class="bg-white border border-gray-200 dark:bg-neutral-900 dark:border-gray-700 p-6 rounded-lg shadow-xl hover:shadow-2xl transition-shadow duration-300">
-                    <h2 class="text-xl font-semibold text-primary mb-2">@title</h2>
-                    @if (!string.IsNullOrWhiteSpace(intro))
-                    {
-                        <p class="text-sm text-gray-800 dark:text-slogan leading-relaxed text-justify">@intro</p>
-                    }
-                    <a href="@item.Url()" class="inline-block mt-4 text-gray-800 dark:text-slogan hover:text-primary text-sm font-medium">
-                        @viewMoreText
+                var description = item.Value<string>("description");
+                var images = item.Value<IEnumerable<IPublishedContent>>("ogImage");
+                var imageUrl = "";
+                if (images != null && images.Any())
+                {
+                    imageUrl = images.First().Url();
+                }
+                <article class="bg-white dark:bg-gray-800 rounded-lg shadow-xl hover:shadow-2xl transition-shadow duration-300">
+                    <a href="@item.Url()" class="group">
+                        @if (!string.IsNullOrEmpty(imageUrl))
+                        {
+                            <div class="overflow-hidden rounded-t-lg">
+                                <img class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110" 
+                                    src="@imageUrl" 
+                                    alt="@title">
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="h-48 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-t-lg">
+                                <svg class="w-24 h-24 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                        }
+                        <div class="p-6">
+                            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2 truncate">@title</h2>
+                            @if (!string.IsNullOrWhiteSpace(description))
+                            {
+                                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed clamp-3-lines">@description</p>
+                            }
+                            <span class="inline-block mt-4 text-gray-800 dark:text-gray-100 hover:text-blue-500 text-sm font-medium transition-colors duration-200">
+                                @viewMoreText
+                            </span>
+                        </div>
                     </a>
                 </article>
+
             }
         </div>
     }
@@ -43,4 +77,19 @@
     {
         <p class="text-gray-800 dark:text-slogan">@noContentText</p>
     }
+</section>
+<section class="intranet-Listing-page mx-auto py-8 px-6 md:px-12 lg:px-24">    
+        @foreach (var block in blocks ?? Enumerable.Empty<BlockListItem>())
+        {
+            var alias = block.Content.ContentType.Alias;
+
+            if (blockViewMap.TryGetValue(alias, out var partialPath))
+            {
+                @await Html.PartialAsync(partialPath, block)
+            }
+            else
+            {
+                <p class="text-red-500">Không tìm thấy view cho block: <strong>@alias</strong></p>
+            }
+        }    
 </section>

@@ -1,30 +1,15 @@
 @using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Extensions
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
-
 @{
-    Layout = null;
-    var settings = Umbraco.ContentAtRoot().FirstOrDefault(x => x.ContentType.Alias == "companySettings");
-    
-    // Kiểm tra null để tránh lỗi.
-    if (settings == null)
-    {
-        // Có thể hiển thị một thông báo lỗi hoặc một trang trống
-        <p>Lỗi: Không tìm thấy cài đặt công ty.</p>
-        return;
-    }
-
-    var companyName = settings.Value<string>("companyName") ?? "Viet Thang Loi Technology Company Limited";
-    var pageTitle = $"{Model.Name} | {companyName}";
-    var pageDescription = settings.Value<string>("defaultMetaDescription") ?? "Viet Thang Loi Technology Company Limited";
+    Layout = null;    
 }
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@pageTitle</title>
-    <meta name="description" content="@pageDescription" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />    
+    @await Html.PartialAsync("Partials/Shared/Seo")    
     <link rel="stylesheet" href="~/css/site.css" />
     @await RenderSectionAsync("Head", required: false)
 </head>
@@ -34,7 +19,7 @@
     <main class="pb-10">
         @RenderBody()
     </main>
-    @await Html.PartialAsync("Partials/Shared/Footer", settings)
+    @await Html.PartialAsync("Partials/Shared/Footer")
     <script src="~/Scripts/site.js" asp-append-version="true"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     @await RenderSectionAsync("Scripts", required: false)

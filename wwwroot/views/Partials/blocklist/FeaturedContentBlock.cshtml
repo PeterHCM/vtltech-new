@@ -1,5 +1,6 @@
 @using Umbraco.Cms.Core.Models.Blocks
 @using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Cms.Core.Models
 @using Umbraco.Extensions
 @inherits UmbracoViewPage<BlockListItem>
 
@@ -30,6 +31,11 @@
                 var imageMedia = cardContent.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault();
                 var imageUrl = imageMedia?.Url();
 
+                var links = cardContent.Value<IEnumerable<Link>>("link");
+                var firstLink = links?.FirstOrDefault();
+                var linkUrl = firstLink?.Url;
+                var linkTarget = firstLink?.Target ?? "_self";
+
                 <div class="bg-gray-100 dark:bg-neutral-900 shadow-xl rounded-lg overflow-hidden">
                     @if (!string.IsNullOrEmpty(imageUrl))
                     {
@@ -46,11 +52,20 @@
                         <div class="flex items-center gap-2 mb-2">
                             @if (!string.IsNullOrEmpty(iconUrl))
                             {
-                                <img src="@iconUrl" alt="icon" class="w-6 h-6" />
+                                <img src="@iconUrl" alt="icon" class="w-auto h-6" />
                             }
                             <h3 class="text-xl font-semibold text-primary">@cardTitle</h3>
                         </div>
-                        <p class="text-sm line-clamp-3 text-gray-600 dark:text-gray-400">@cardDescription</p>
+                        <p class="text-sm line-clamp-3 text-gray-600 dark:text-gray-400">@Html.Raw(cardDescription)</p>
+
+                        @if (!string.IsNullOrEmpty(linkUrl))
+                        {
+                            <div class="mt-4">
+                                <a href="@linkUrl" target="@linkTarget" class="inline-block text-sm px-4 py-2 bg-primary text-white rounded hover:bg-white hover:text-primary transition">
+                                    Xem chi tiết
+                                </a>
+                            </div>
+                        }
                     </div>
                 </div>
             }
