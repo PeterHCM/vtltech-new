@@ -1,0 +1,141 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@using Umbraco.Cms.Core.Security
+@using Umbraco.Cms.Core.Services
+@using Umbraco.Cms.Web.Website.Controllers
+@using Umbraco.Cms.Web.Website.Models
+@using Umbraco.Extensions
+@inject IMemberManager memberManager
+@inject IMemberService memberService
+@using System.Text.Json
+
+@{
+    var currentMember = await memberManager.GetCurrentMemberAsync();
+    var memberEntity = memberService.GetByKey(currentMember.Key);
+    var email = memberEntity?.Email;
+    var username = memberEntity?.Username;
+    var success = TempData["FormSuccess"] != null;
+
+    string GetString(string alias) => memberEntity?.GetValue<string>(alias) ?? "";
+    DateTime? GetDate(string alias) => memberEntity?.GetValue<DateTime?>(alias);
+
+    string GetFirstFromJson(string alias)
+    {
+        var raw = memberEntity?.GetValue<string>(alias);
+        return !string.IsNullOrWhiteSpace(raw)
+            ? JsonSerializer.Deserialize<List<string>>(raw)?.FirstOrDefault()
+            : null;
+    }
+
+    string fullName = GetString("fullName");
+    string gender = GetString("gender");
+    string maritalStatus = GetFirstFromJson("maritalStatus");
+    DateTime? dateOfBirth = GetDate("dateOfBirth");
+    string nationalId = GetString("nationalId");
+    DateTime? dateOfIssue = GetDate("dateOfIssue");
+    string placeOfIssue = GetString("placeOfIssue");
+    string taxCode = GetString("taxCode");
+
+    string phone = GetString("phone");
+    string personalEmail = GetString("personalEmail");
+    string permanentAddress = GetString("permanentAddress");
+    string currentAddress = GetString("currentAddress");
+
+    string position = GetFirstFromJson("position");
+    string department = GetFirstFromJson("department");
+    DateTime? dateOfJoining = GetDate("dateOfJoining");
+    string contractType = GetFirstFromJson("contractType");
+
+    string emergencyContact1Name = GetString("emergencyContact1Name");
+    string emergencyContact1Relationship = GetFirstFromJson("emergencyContact1Relationship");
+    string emergencyContact1Phone = GetString("emergencyContact1Phone");
+    string emergencyContact1Address = GetString("emergencyContact1Address");
+
+    string emergencyContact2Name = GetString("emergencyContact2Name");
+    string emergencyContact2Relationship = GetFirstFromJson("emergencyContact2Relationship");
+    string emergencyContact2Phone = GetString("emergencyContact2Phone");
+    string emergencyContact2Address = GetString("emergencyContact2Address");
+
+    string inputClass = "block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-primary focus:border-primary";
+
+    var isEdit = Context.Request.Query["edit"] == "true";
+    var activeTab = Context.Request.Query["tab"].ToString().ToLower();
+    if (string.IsNullOrWhiteSpace(activeTab)) activeTab = "personal";
+
+    string tabClass(string tab) =>
+        tab == activeTab
+        ? "px-4 py-2 font-semibold text-white bg-primary rounded"
+        : "px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary";
+}
+
+@if (currentMember != null && isEdit)
+{
+    <div class="edit-profile max-w-5xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 space-y-10">
+        @if (success)
+        {
+            <div class="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Cập nhật tài khoản của bạn thành công</span>
+            </div>
+        }
+        <div asp-validation-summary="All" class="text-sm text-red-600 dark:text-red-400 mb-4"></div>
+        <div class="flex gap-4 mb-6 border-b border-gray-300 dark:border-gray-700 pb-2">
+            <a href="?edit=true&tab=personal" class="@tabClass("personal")">Thông tin cá nhân</a>
+            <a href="?edit=true&tab=contact" class="@tabClass("contact")">Thông tin liên hệ</a>
+            <a href="?edit=true&tab=work" class="@tabClass("work")">Thông tin công việc</a>
+            <a href="?edit=true&tab=emergency" class="@tabClass("emergency")">Liên hệ khẩn cấp</a>
+        </div>
+
+        @using (Html.BeginUmbracoForm<UmbProfileController>("HandleUpdateProfile", new { RedirectUrl = "" }))
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @if (activeTab == "personal")
+                {
+                    <input name="MemberProperties[fullName]" value="@fullName" placeholder="Họ và tên" class="@inputClass" />
+                    <input name="MemberProperties[gender]" value="@gender" placeholder="Giới tính" class="@inputClass" />
+                    <input type="date" name="MemberProperties[dateOfBirth]" value="@dateOfBirth?.ToString("yyyy-MM-dd")" class="@inputClass" />
+                    <input name="MemberProperties[maritalStatus]" value="@maritalStatus" placeholder="Tình trạng hôn nhân" class="@inputClass" />
+                    <input name="MemberProperties[nationalId]" value="@nationalId" placeholder="CMND/CCCD" class="@inputClass" />
+                    <input type="date" name="MemberProperties[dateOfIssue]" value="@dateOfIssue?.ToString("yyyy-MM-dd")" class="@inputClass" />
+                    <input name="MemberProperties[placeOfIssue]" value="@placeOfIssue" placeholder="Nơi cấp" class="@inputClass" />
+                    <input name="MemberProperties[taxCode]" value="@taxCode" placeholder="Mã số thuế" class="@inputClass" />
+                }
+                else if (activeTab == "contact")
+                {
+                    <input name="MemberProperties[phone]" value="@phone" placeholder="Số điện thoại" class="@inputClass" />
+                    <input name="MemberProperties[personalEmail]" value="@personalEmail" placeholder="Email cá nhân" class="@inputClass" />
+                    <input name="MemberProperties[permanentAddress]" value="@permanentAddress" placeholder="Địa chỉ thường trú" class="@inputClass" />
+                    <input name="MemberProperties[currentAddress]" value="@currentAddress" placeholder="Địa chỉ hiện tại" class="@inputClass" />
+                }
+                else if (activeTab == "work")
+                {
+                    <input name="MemberProperties[email]" value="@email" placeholder="Email đăng nhập" class="@inputClass" />
+                    <input name="MemberProperties[username]" value="@username" placeholder="Tên đăng nhập" class="@inputClass" />
+                    <input name="MemberProperties[position]" value="@position" placeholder="Chức vụ" class="@inputClass" />
+                    <input name="MemberProperties[department]" value="@department" placeholder="Phòng ban" class="@inputClass" />
+                    <input type="date" name="MemberProperties[dateOfJoining]" value="@dateOfJoining?.ToString("yyyy-MM-dd")" class="@inputClass" />
+                    <input name="MemberProperties[contractType]" value="@contractType" placeholder="Loại hợp đồng" class="@inputClass" />
+                }
+                else if (activeTab == "emergency")
+                {
+                    <input name="MemberProperties[emergencyContact1Name]" value="@emergencyContact1Name" placeholder="Người liên hệ 1" class="@inputClass" />
+                    <input name="MemberProperties[emergencyContact1Relationship]" value="@emergencyContact1Relationship" placeholder="Mối quan hệ 1" class="@inputClass" />
+                    <input name="MemberProperties[emergencyContact1Phone]" value="@emergencyContact1Phone" placeholder="SĐT liên hệ 1" class="@inputClass" />
+                    <input name="MemberProperties[emergencyContact1Address]" value="@emergencyContact1Address" placeholder="Địa chỉ liên hệ 1" class="@inputClass" />
+
+                    <input name="MemberProperties[emergencyContact2Name]" value="@emergencyContact2Name" placeholder="Người liên hệ 2" class="@inputClass" />
+                    <input name="MemberProperties[emergencyContact2Relationship]" value="@emergencyContact2Relationship" placeholder="Mối quan hệ 2" class="@inputClass" />
+                    <input name="MemberProperties[emergencyContact2Phone]" value="@emergencyContact2Phone" placeholder="SĐT liên hệ 2" class="@inputClass" />
+                    <input name="MemberProperties[emergencyContact2Address]" value="@emergencyContact2Address" placeholder="Địa chỉ liên hệ 2" class="@inputClass" />
+                }
+            </div>
+            <div class="mt-8">
+                <button type="submit" class="w-full bg-primary hover:bg-secondary text-white font-medium py-2 px-4 rounded transition duration-200">
+                    Cập nhật
+                </button>
+            </div>
+        }
+    </div>
+}
