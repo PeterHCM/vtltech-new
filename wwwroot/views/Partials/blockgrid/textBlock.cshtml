@@ -1,0 +1,22 @@
+@inherits UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@{
+    var content = Model.Content;
+    var title = content.HasValue("title") ? content.Value("title")?.ToString() : null;
+    var description = content.HasValue("description") ? content.Value("description")?.ToString() : null;
+    var columnSpan = content.HasValue("columnSpan") ? Convert.ToInt32(content.Value("columnSpan")) : 12;
+}
+<div class="col-span-@columnSpan sm:col-span-12 p-6 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+    @if (!string.IsNullOrWhiteSpace(title))
+    {
+        <h2 class="text-2xl font-bold mb-2 text-indigo-600 dark:text-indigo-400">@title</h2>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(description))
+    {
+        <p class="mb-4 text-base text-gray-700 dark:text-gray-300">@description</p>
+    }
+
+    <div class="prose dark:prose-invert max-w-none">
+        @Html.Raw(content.Value("body"))
+    </div>
+</div>
