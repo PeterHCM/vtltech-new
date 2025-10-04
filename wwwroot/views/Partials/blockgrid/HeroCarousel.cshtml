@@ -1,17 +1,24 @@
-@inherits UmbracoViewPage<BlockGridItem>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<BlockGridItem>
 @using Umbraco.Cms.Core.Models.Blocks
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using System.Linq
 
-<section class="pb-10 min-h-screen">
+<section class="pb-10">
 @{
     var content = Model.Content;
     var banners = content.Value<BlockListModel>("banners");
+    var bannerKey = content.Key.ToString("N").Substring(0, 8);
 }
 @if (banners != null && banners.Any())
 {
-    <div class="swiper hero-swiper relative overflow-hidden">
-        <div class="swiper-wrapper">
+    var totalSlides = banners.Count();
+    <div id="carousel-@bannerKey"
+         class="relative overflow-hidden group"
+         data-carousel-key="@bannerKey"
+         data-total-slides="@totalSlides">
+        <div class="carousel-track flex transition-transform duration-700 ease-in-out">
             @foreach (var banner in banners)
             {
                 var b = banner.Content;
@@ -19,41 +26,36 @@
                 var subtitle = b.Value<string>("subtitle");
                 var ctaLinks = b.Value<IEnumerable<Link>>("ctaLinks");
                 var images = b.Value<IEnumerable<MediaWithCrops>>("images");
-                var icons = b.Value<IEnumerable<MediaWithCrops>>("icons");
-
                 var image = images?.FirstOrDefault();
+                var icons = b.Value<IEnumerable<MediaWithCrops>>("icons");
                 var icon = icons?.FirstOrDefault();
-
-                <div class="swiper-slide relative h-[500px] sm:h-[600px]">
-                    <div class="relative w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-center sm:text-left px-6 sm:px-12 overflow-hidden">
+                <div class="carousel-slide w-full flex-shrink-0 relative">
+                    <div class="hero-slide relative flex flex-col items-center justify-center text-center px-6 sm:px-12 overflow-hidden h-[500px] bg-black">
                         @if (image != null)
                         {
-                            <div class="absolute inset-0 z-0">
+                            <div class="absolute inset-0 z-[-1]">
                                 <img src="@image.Url()" alt="@heading"
-                                     class="w-full h-full object-cover transition-transform duration-1000 ease-out swiper-zoom-target scale-100"
-                                     style="will-change: transform;" aria-hidden="true" />
+                                     class="w-full h-full object-cover" loading="lazy" />
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                             </div>
                         }
 
-                        <div class="relative z-10 max-w-3xl py-12 sm:py-0">
+                        <div class="relative z-10 max-w-3xl py-12 sm:py-0 flex flex-col items-center justify-center text-center">
                             @if (icon != null)
                             {
-                                <img src="@icon.Url()" alt="Icon" class="w-auto h-20 mb-4 mx-auto sm:mx-0" />
+                                <img src="@icon.Url()" alt="@icon.Name()" class="h-20 w-auto mb-6 mx-auto" loading="lazy" />
                             }
                             @if (!string.IsNullOrEmpty(heading))
                             {
                                 <h2 class="text-2xl sm:text-5xl font-bold text-white mb-4 leading-tight">@heading</h2>
                             }
-
                             @if (!string.IsNullOrEmpty(subtitle))
                             {
                                 <p class="text-base sm:text-xl text-white/90 mb-6">@subtitle</p>
                             }
-
-                            @if (ctaLinks != null)
+                            @if (ctaLinks != null && ctaLinks.Any())
                             {
-                                <div class="flex flex-wrap justify-center sm:justify-start gap-4">
+                                <div class="flex flex-wrap justify-center gap-4">
                                     @foreach (var link in ctaLinks)
                                     {
                                         <a href="@link.Url" target="@link.Target" rel="noopener"
@@ -69,62 +71,76 @@
             }
         </div>
 
-        <!-- Navigation with Heroicons -->
-        <button class="swiper-button-prev absolute left-4 top-1/2 transform -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full" aria-label="Previous slide" title="Previous slide">
+        <!-- Navigation -->
+        <button data-action="prev" data-target="@bannerKey"
+                class="swiper-button-prev absolute left-4 top-1/2 transform -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full"
+                aria-label="Previous slide">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
         </button>
-        <button class="swiper-button-next absolute right-4 top-1/2 transform -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full" aria-label="Next slide" title="Next slide">
+        <button data-action="next" data-target="@bannerKey"
+                class="swiper-button-next absolute right-4 top-1/2 transform -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full"
+                aria-label="Next slide">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
         </button>
-
-        <div class="swiper-pagination"></div>
     </div>
 }
 </section>
 
-
-<!-- Swiper JS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
 <script>
-    const swiper = new Swiper('.hero-swiper', {
-        loop: true,
-        autoplay: {
-            delay: 5000,
-            disableOnInteraction: false,
-        },
-        pagination: {
-            el: '.swiper-pagination',
-            clickable: true,
-        },
-        navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
-        },
-        effect: 'fade',
-        fadeEffect: {
-            crossFade: true
-        },
-        zoom: {
-            maxRatio: 1.1,
-        },
-        autoHeight: true,
-        on: {
-            slideChangeTransitionStart: () => {
-                document.querySelectorAll('.swiper-zoom-target').forEach(img => {
-                    img.classList.remove('scale-110');
-                });
-            },
-            slideChangeTransitionEnd: () => {
-                const activeSlide = document.querySelector('.swiper-slide-active .swiper-zoom-target');
-                if (activeSlide) {
-                    activeSlide.classList.add('scale-110');
-                }
+function initializeAllCarousels() {
+    document.querySelectorAll('[data-carousel-key]').forEach(carousel => {
+        const key = carousel.dataset.carouselKey;
+        const totalSlides = parseInt(carousel.dataset.totalSlides);
+        const track = carousel.querySelector('.carousel-track');
+        const slides = carousel.querySelectorAll('.carousel-slide');
+        let currentIndex = 0;
+        let slideInterval;
+        const intervalTime = 5000;
+
+        function goToSlide(index) {
+            if (index < 0) index = totalSlides - 1;
+            if (index >= totalSlides) index = 0;
+            currentIndex = index;
+            track.style.transform = `translateX(-${index * 100}%)`;
+
+            carousel.querySelectorAll(".zoom-target").forEach(img => img.classList.remove("scale-[1.1]"));
+            const active = slides[index].querySelector(".zoom-target");
+            if (active) active.classList.add("scale-[1.1]");
+        }
+
+        function startAutoSlide() {
+            clearInterval(slideInterval);
+            if (totalSlides > 1) {
+                slideInterval = setInterval(() => {
+                    goToSlide(currentIndex + 1);
+                }, intervalTime);
             }
         }
+
+        function stopAutoSlide() {
+            clearInterval(slideInterval);
+        }
+
+        carousel.addEventListener('mouseenter', stopAutoSlide);
+        carousel.addEventListener('mouseleave', startAutoSlide);
+
+        carousel.querySelectorAll('button[data-action]').forEach(button => {
+            button.addEventListener('click', () => {
+                stopAutoSlide();
+                const action = button.dataset.action;
+                goToSlide(action === 'next' ? currentIndex + 1 : currentIndex - 1);
+                setTimeout(startAutoSlide, 500);
+            });
+        });
+
+        goToSlide(0);
+        startAutoSlide();
     });
+}
+
+document.addEventListener('DOMContentLoaded', initializeAllCarousels);
 </script>
