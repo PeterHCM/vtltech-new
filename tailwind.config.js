@@ -7,6 +7,9 @@ module.exports = {
   darkMode: 'class', // Sử dụng class 'dark' để bật/tắt chế độ tối
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
       colors: {
         primary: '#e06800',
         secondary: '#006163',

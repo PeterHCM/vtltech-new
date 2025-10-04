@@ -1,0 +1,120 @@
+@inherits UmbracoViewPage<BlockGridItem>
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Extensions
+
+@{
+    var content = Model.Content;
+    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
+    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
+    var layout = content.Value<string>("layout")?.ToLowerInvariant() ?? "tabs";
+    var tabItems = content.Value<BlockListModel>("TabItems");
+}
+
+@if (tabItems != null && tabItems.Any())
+{
+    <div class="col-span-12 lg:col-span-@columnSpan row-span-@rowSpan w-full h-full">
+        <div class="w-full h-full p-6 bg-white dark:bg-gray-900 rounded shadow">
+            @if (layout == "tabs")
+            {
+                <div class="flex flex-wrap gap-4 mb-6">
+                    @foreach (var tabItem in tabItems)
+                    {
+                        var title = tabItem.Content.Value<string>("tabTitle");
+                        var tabId = $"tab-{tabItem.Content.Key}";
+                        <button class="px-4 py-2 rounded bg-primary text-white hover:bg-secondary transition" data-tab="@tabId">
+                            @title
+                        </button>
+                    }
+                </div>
+
+                @foreach (var tabItem in tabItems)
+                {
+                    var tabId = $"tab-{tabItem.Content.Key}";
+                    var tabContent = tabItem.Content.Value<BlockListModel>("tabContent");
+
+                    <div id="@tabId" class="tab-content hidden">
+                        @if (tabContent != null && tabContent.Any())
+                        {
+                            foreach (var block in tabContent)
+                            {
+                                @Html.Partial($"Partials/blocklist/{block.Content.ContentType.Alias}", block)
+                            }
+                        }
+                    </div>
+                }
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        const buttons = document.querySelectorAll("[data-tab]");
+                        const contents = document.querySelectorAll(".tab-content");
+
+                        buttons.forEach(btn => {
+                            btn.addEventListener("click", () => {
+                                contents.forEach(c => c.classList.add("hidden"));
+                                document.getElementById(btn.dataset.tab)?.classList.remove("hidden");
+                            });
+                        });
+
+                        if (contents.length > 0) {
+                            contents[0].classList.remove("hidden");
+                        }
+                    });
+                </script>
+            }
+            else if (layout == "accordion")
+            {
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach (var tabItem in tabItems)
+                    {
+                        var title = tabItem.Content.Value<string>("tabTitle");
+                        var tabId = $"accordion-{tabItem.Content.Key}";
+                        var tabContent = tabItem.Content.Value<BlockListModel>("TabContent");
+
+                        <div class="border border-gray-300 rounded overflow-hidden shadow">
+                            <button class="w-full text-left px-4 py-3 bg-primary text-white hover:bg-secondary transition flex items-center justify-between accordion-toggle" data-target="@tabId">
+                                <span>@title</span>
+                                <svg class="w-4 h-4 transform transition-transform duration-300" data-icon="@tabId" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="@tabId" class="accordion-content max-h-0 overflow-hidden transition-all duration-300 px-4 py-0 text-gray-700">
+                                @if (tabContent != null && tabContent.Any())
+                                {
+                                    foreach (var block in tabContent)
+                                    {
+                                        @Html.Partial($"Partials/blocklist/{block.Content.ContentType.Alias}", block)
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        const toggles = document.querySelectorAll(".accordion-toggle");
+
+                        toggles.forEach(toggle => {
+                            toggle.addEventListener("click", () => {
+                                const targetId = toggle.dataset.target;
+                                const content = document.getElementById(targetId);
+                                const icon = document.querySelector(`[data-icon="${targetId}"]`);
+
+                                const isOpen = content.style.maxHeight && content.style.maxHeight !== "0px";
+
+                                if (isOpen) {
+                                    content.style.maxHeight = "0px";
+                                    icon.classList.remove("rotate-180");
+                                } else {
+                                    content.style.maxHeight = content.scrollHeight + "px";
+                                    icon.classList.add("rotate-180");
+                                }
+                            });
+                        });
+                    });
+                </script>
+            }
+        </div>
+    </div>
+}

@@ -1,0 +1,39 @@
+@inherits UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+
+@{
+    var content = Model.Content;
+    var settings = Model.Settings;
+    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
+    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
+    var fileType = content.Value<string>("FileType")?.ToLowerInvariant() ?? "pdf";
+    var title = content.Value<string>("Title");
+    var description = content.Value<string>("Description");
+    var links = content.Value<IEnumerable<Link>>("Links");
+}
+
+<div class="grid grid-cols-12 gap-6">
+    <div class="col-span-12 sm:col-span-@columnSpan row-span-@rowSpan bg-white dark:bg-gray-900 p-6 rounded shadow">
+        @if (!string.IsNullOrEmpty(title))
+        {
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-2">@title</h2>
+        }
+
+        @if (!string.IsNullOrEmpty(description))
+        {
+            <p class="text-gray-600 dark:text-gray-300 mb-4">@description</p>
+        }
+
+        @if (links?.Any() == true)
+        {
+            var partialViewData = new ViewDataDictionary(ViewData);
+            if (!string.IsNullOrWhiteSpace(fileType))
+            {
+                partialViewData.Add("fileType", fileType);
+            }
+
+            @Html.Partial("Partials/Shared/LinkList", links, partialViewData)
+        }
+    </div>
+</div>
