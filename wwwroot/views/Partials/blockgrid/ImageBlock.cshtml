@@ -1,0 +1,142 @@
+@inherits UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using Umbraco.Extensions
+@using System.Linq
+@using System
+
+@{
+    var content = Model.Content;
+    var images = content.Value<IEnumerable<IPublishedContent>>("images")?.ToList() ?? new List<IPublishedContent>();
+    var title = content.Value<string>("title");
+    var description = content.Value<string>("description");
+    var layout = content.Value<string>("layout")?.ToLowerInvariant() ?? "single";
+    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
+    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
+    var blockClass = $"col-span-12 row-span-12 sm:col-span-{columnSpan} sm:row-span-{rowSpan}";
+    var keyShort = content.Key.ToString("N").Substring(0, 8);
+    var image = images.FirstOrDefault();
+}
+
+<div class="@blockClass">
+    <div class="p-4 rounded-lg shadow-md h-full">
+        
+        @if (!string.IsNullOrEmpty(title))
+        {
+            <h2 class="text-xl font-bold mb-2">@title</h2>
+        }
+
+        @if (!string.IsNullOrEmpty(description))
+        {
+            <p class="text-sm mb-4" >@description</p>
+        }
+
+        @switch (layout)
+        {
+        case "single":
+            if (images.Count == 1)
+            {
+                <img src="@image?.Url()" alt="@image?.Name" class="w-full h-auto sm:h-96 object-cover rounded" />
+            }
+            else if (images.Count > 1)
+            {
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    @foreach (var img in images)
+                    {
+                        <img src="@img.Url()" alt="@img.Name" class="w-full h-auto sm:h-80 object-cover rounded" />
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-red-500 opacity-50">Chưa chọn ảnh nào.</p>
+            }
+            break;
+
+        case "grid":
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                @foreach (var img in images)
+                {
+                    <img src="@img.Url()" alt="@img.Name" class="w-full h-auto sm:h-72 object-cover rounded" />
+                }
+            </div>
+            break;
+
+            case "carousel":
+                if (images.Count > 1)
+                {
+                    <div class="relative w-full overflow-hidden rounded-lg">
+                        <div id="carousel-@keyShort" class="flex transition-transform duration-500 ease-in-out">
+                            @foreach (var img in images)
+                            {
+                                <img src="@img.Url()" alt="@img.Name" class="w-full flex-shrink-0 object-cover rounded" />
+                            }
+                        </div>
+                        <button onclick="prevSlide('@keyShort')" class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/20 text-white p-2 rounded-full hover:bg-white/40">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <button onclick="nextSlide('@keyShort')" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/20 text-white p-2 rounded-full hover:bg-white/40">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                    <script>
+                        const key = "@keyShort";
+                        let currentIndex = 0;
+                        const carousel = document.getElementById("carousel-" + key);
+                        const totalSlides = carousel.children.length;
+
+                        function updateSlide() {
+                            carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+                        }
+
+                        function nextSlide(k) {
+                            if (k !== key) return;
+                            currentIndex = (currentIndex + 1) % totalSlides;
+                            updateSlide();
+                        }
+
+                        function prevSlide(k) {
+                            if (k !== key) return;
+                            currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+                            updateSlide();
+                        }
+                    </script>
+                }
+                else
+                {
+                    <p class="text-red-400 opacity-50">Không có ảnh nào được chọn.</p>
+                }
+                break;
+
+            case "thumbnail-gallery":
+                if (images.Any())
+                {
+                    <div class="mb-4">
+                        <img id="mainImage-@keyShort" src="@image?.Url()" alt="@image?.Name" class="w-full rounded-lg object-cover transition-all duration-300" />
+                    </div>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                        @for (int i = 0; i < images.Count; i++)
+                        {
+                            var img = images[i];
+                            <div class="h-32 overflow-hidden rounded-lg border border-transparent hover:border-white cursor-pointer transition-all duration-200"
+                                onclick="document.getElementById('mainImage-@keyShort').src='@img.Url()'">
+                                <img src="@img.Url()" alt="@img.Name"
+                                    class="w-full h-full object-cover" />
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-red-400 opacity-50">Không có ảnh nào được chọn.</p>
+                }
+                break;
+
+            default:
+                <p class="text-red-400 opacity-50">Layout <strong>@layout</strong> chưa có</p>
+                break;
+        }
+    </div>
+</div>

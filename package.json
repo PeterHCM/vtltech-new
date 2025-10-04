@@ -4,8 +4,9 @@
   "description": "Dự án Umbraco tích hợp TailwindCSS và cá nhân hóa giao diện",
   "main": "index.js",
   "scripts": {
-    "dev": "tailwindcss -i ./wwwroot/css/peter.css -o ./wwwroot/css/site.css --watch",
-    "build": "tailwindcss -i ./wwwroot/css/peter.css -o ./wwwroot/css/site.css --minify"
+    "dev": "tailwindcss -i ./wwwroot/css/tailwind.css -o ./wwwroot/css/site.css --watch",
+    "build": "tailwindcss -i ./wwwroot/css/tailwind.css -o ./wwwroot/css/site.css --minify",
+    "deploy": "git checkout main && git pull origin main && npm run build && git add . && git commit -m \"Cập nhật giao diện\" && git push origin main"
   },
   "keywords": [
     "umbraco",
@@ -18,5 +19,9 @@
   "license": "MIT",
   "devDependencies": {
     "tailwindcss": "^3.4.4"
+  },
+  "dependencies": {
+    "@tailwindcss/line-clamp": "^0.4.4",
+    "@tailwindcss/typography": "^0.5.19"
   }
 }

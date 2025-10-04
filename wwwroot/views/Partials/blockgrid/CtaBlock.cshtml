@@ -1,0 +1,47 @@
+@inherits UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+
+@{
+    var content = Model.Content;
+    var settings = Model.Settings;
+
+    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
+    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
+    var blockClass = $"col-span-12 row-span-12 sm:col-span-{columnSpan} sm:row-span-{rowSpan}";
+
+    var title = content.Value<string>("title");
+    var description = content.Value<string>("description");
+    var buttonText = content.Value<string>("buttonText");
+
+    // Lấy link đầu tiên từ Multi URL Picker
+    var ctaLink = content.Value<IEnumerable<Link>>("buttonLink")?.FirstOrDefault();
+    var ctaUrl = ctaLink?.Url;
+    var ctaTarget = ctaLink?.Target;
+}
+<div class="@blockClass">
+    <div class="p-4 sm:p-6 rounded-lg shadow-md bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 h-full flex flex-col justify-center items-start text-center sm:text-left">
+        @if (!string.IsNullOrEmpty(title))
+        {
+            <h2 class="text-xl sm:text-2xl font-bold mb-2">@title</h2>
+        }
+
+        @if (!string.IsNullOrEmpty(description))
+        {
+            <p class="text-base sm:text-lg mb-4 opacity-80 leading-relaxed">@description</p>
+        }
+
+        @if (!string.IsNullOrEmpty(buttonText) && !string.IsNullOrEmpty(ctaUrl))
+        {
+            <a href="@ctaUrl" target="@ctaTarget" rel="noopener"
+               class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded transition duration-200">
+                @buttonText
+            </a>
+        }
+
+        @if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(description) && string.IsNullOrEmpty(buttonText))
+        {
+            <p class="text-red-500 opacity-50">CTA Block - Chưa nhập nội dung.</p>
+        }
+    </div>
+</div>

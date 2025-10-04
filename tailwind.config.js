@@ -3,7 +3,6 @@ module.exports = {
   content: [
     './wwwroot/Views/**/*.cshtml',
     './wwwroot/js/**/*.js',
-    './wwwroot/css/**/*.css',
   ],
   darkMode: 'class', // Sử dụng class 'dark' để bật/tắt chế độ tối
   theme: {
@@ -104,6 +103,7 @@ module.exports = {
     },
   },
   safelist: [
+    // Hiệu ứng delay
     'peer-checked:rotate-90',
     'delay-[0ms]',
     'delay-[50ms]',
@@ -112,6 +112,30 @@ module.exports = {
     'delay-[200ms]',
     'delay-[250ms]',
     'delay-[300ms]',
+
+    // col-span
+    ...Array.from({ length: 12 }, (_, i) => `col-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `sm:col-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `md:col-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `lg:col-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `xl:col-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `2xl:col-span-${i + 1}`),
+
+    // grid-cols
+    ...Array.from({ length: 12 }, (_, i) => `grid-cols-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `sm:grid-cols-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `md:grid-cols-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `lg:grid-cols-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `xl:grid-cols-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `2xl:grid-cols-${i + 1}`),
+
+    // row-span
+    ...Array.from({ length: 12 }, (_, i) => `row-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `sm:row-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `md:row-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `lg:row-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `xl:row-span-${i + 1}`),
+    ...Array.from({ length: 12 }, (_, i) => `2xl:row-span-${i + 1}`),
   ],
   plugins: [
     require('@tailwindcss/line-clamp'),
