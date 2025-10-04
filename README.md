@@ -22,7 +22,11 @@ Cài đặt các package cần thiết:
 ```bash
 npm install
 ```
+Cài đặt Module cần thiết:
 
+```bash
+npm install @tailwindcss/line-clamp @tailwindcss/typography
+```
 ## 🎨 Phát triển
 
 Chạy build trong quá trình phát triển:
