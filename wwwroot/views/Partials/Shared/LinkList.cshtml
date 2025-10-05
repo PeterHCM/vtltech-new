@@ -1,39 +1,110 @@
 @model IEnumerable<Umbraco.Cms.Core.Models.Link>
-
+@using Microsoft.AspNetCore.Html
 @{
-    // Nhận tham số 'fileType' từ ViewData, mặc định là rỗng
-    var fileType = ViewData["fileType"] as string;
-    var isPdf = fileType == "Pdf";
+    var defaultFileType = ViewData["fileType"] as string;
+    // Hàm nội bộ để lấy loại file dựa trên URL hoặc defaultFileType
+    string GetFileType(string url, string defaultType)
+    {
+        // 1. Nếu defaultType được truyền vào, ưu tiên dùng nó
+        if (!string.IsNullOrWhiteSpace(defaultType))
+        {
+            return defaultType.ToLowerInvariant();
+        }
+        
+        // 2. Nếu không, cố gắng lấy từ phần mở rộng của URL
+        var extension = System.IO.Path.GetExtension(url)?.TrimStart('.').ToLowerInvariant();
+        return extension switch
+        {
+            "pdf" => "pdf",
+            "doc" or "docx" => "doc",
+            "xls" or "xlsx" => "excel",
+            "ppt" or "pptx" => "powerpoint",
+            "zip" or "rar" or "7z" => "archive",
+            _ => "link" // Mặc định là link
+        };
+    }
+    
+    // Khai báo các SVG dưới dạng HtmlString để tránh lỗi cú pháp Razor
+    var PdfIcon = new HtmlString(
+        $@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-red-600 flex-shrink-0"" viewBox=""0 0 24 24"" fill=""currentColor"">
+            <path d=""M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM12 18h-2v-4h2v4zM12 10h-2V6h2v4z"" />
+        </svg>"
+    );
+    
+    var DocIcon = new HtmlString(
+        $@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-blue-600 flex-shrink-0"" viewBox=""0 0 24 24"" fill=""currentColor"">
+            <path d=""M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6zM15 16h-6v-2h6v2z"" />
+        </svg>"
+    );
+    
+    var ExcelIcon = new HtmlString(
+        $@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-green-600 flex-shrink-0"" viewBox=""0 0 24 24"" fill=""currentColor"">
+            <path d=""M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6zM15 17h-2v-2h2v2zM15 14h-2v-2h2v2zM15 11h-2V9h2v2zM11 17H9v-2h2v2zM11 14H9v-2h2v2zM11 11H9V9h2v2z"" />
+        </svg>"
+    );
+
+    var PowerpointIcon = new HtmlString(
+        $@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-orange-600 flex-shrink-0"" viewBox=""0 0 24 24"" fill=""currentColor"">
+            <path d=""M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6zM12 15h-2v-4h2v4zM12 11h-2V7h2v4zM16 15h-2v-4h2v4zM16 11h-2V7h2v4z"" />
+        </svg>"
+    );
+    
+    var ArchiveIcon = new HtmlString(
+        $@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-yellow-600 flex-shrink-0"" fill=""currentColor"" viewBox=""0 0 24 24"">
+            <path d=""M4 3h16c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2zm0 16h16V5H4v14zm2-8h12v2H6v-2zm0 4h12v2H6v-2z"" />
+        </svg>"
+    );
+
+    var LinkIcon = new HtmlString(
+        $@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
+            <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.881a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"" />
+        </svg>"
+    );
+
+    // Func mới (chỉ trả về HtmlString)
+    Func<string, IHtmlContent> GetIcon = (type) => type switch
+    {
+        "pdf" => PdfIcon,
+        "doc" => DocIcon,
+        "excel" => ExcelIcon,
+        "powerpoint" => PowerpointIcon,
+        "archive" => ArchiveIcon,
+        _ => LinkIcon
+    };
+
+    // Icon cho link mở tab mới (vẫn giữ nguyên vì nó không nằm trong Func)
+    var TargetIcon = new HtmlString(
+        $@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-3 h-3 text-gray-400 dark:text-gray-500 ml-1"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
+            <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"" />
+        </svg>"
+    );
 }
 
-<ul class="space-y-2">
+<ul class="space-y-3 text-gray-700 dark:text-gray-300">
     @foreach (var link in Model)
     {
         var url = link.Url;
         var name = link.Name;
         var target = link.Target;
+        var type = GetFileType(url, defaultFileType);
 
-        <li class="hover:text-primary transition-colors flex items-center gap-2">
-            @if (isPdf)
-            {
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M2.5 13.5h10V21h-10c-.827 0-1.5-.673-1.5-1.5v-6c0-.827.673-1.5 1.5-1.5zM12.5 13.5h9c.827 0 1.5.673 1.5 1.5v6c0 .827-.673 1.5-1.5 1.5h-9v-9zM2.5 3h10v9h-10c-.827 0-1.5-.673-1.5-1.5v-6c0-.827.673-1.5 1.5-1.5zM12.5 3h9c.827 0 1.5.673 1.5 1.5v6c0 .827-.673 1.5-1.5 1.5h-9v-9z"/>
-                </svg>
-            }
-            else
-            {
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            }
+        <li class="flex items-center gap-2">
+            
+            @* 1. Icon File Type/Link *@
+            @GetIcon(type) @* Dùng Func mới *@
 
-            <a href="@url" target="@target">@name</a>
+            @* 2. Thẻ A *@
+            <a href="@url" 
+               target="@target" 
+               class="hover:text-primary dark:hover:text-primary transition-colors text-base font-medium truncate" 
+               rel="@(target == "_blank" ? "noopener noreferrer" : "")">
+                @name
+            </a>
 
-            @if (isPdf)
+            @* 3. Icon mở tab mới *@
+            @if (target == "_blank")
             {
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
+                @TargetIcon
             }
         </li>
     }
