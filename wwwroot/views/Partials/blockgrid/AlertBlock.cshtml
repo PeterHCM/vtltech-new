@@ -1,0 +1,118 @@
+@inherits UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using Umbraco.Extensions
+@using System.Collections.Generic
+@using System.Linq
+@inject Umbraco.Cms.Core.Security.IMemberManager memberManager
+@inject Umbraco.Cms.Core.Services.IMemberGroupService memberGroupService
+
+@{
+    var content = Model.Content;
+    var settings = Model.Settings;
+
+    var alertType = content.Value<string>("alertType") ?? "info";
+    var alertLinksRaw = content.Value<IEnumerable<IPublishedElement>>("alertLinks") ?? Enumerable.Empty<IPublishedElement>();
+    var isClosable = content.Value<bool>("isClosable");
+
+    var rawGroup = content.Value<string>("memberGroups");
+    List<string> memberGroups = new();
+
+    if (!string.IsNullOrWhiteSpace(rawGroup))
+    {
+        var groupIds = rawGroup.Split(',')
+            .Select(id => id.Trim())
+            .Where(id => !string.IsNullOrWhiteSpace(id));
+
+        memberGroups = groupIds
+            .Select(id => memberGroupService.GetById(int.Parse(id))?.Name)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToList();
+    }
+
+    var currentMember = await memberManager.GetCurrentMemberAsync();
+    IEnumerable<string> currentGroups = Enumerable.Empty<string>();
+
+    if (currentMember != null)
+    {
+        currentGroups = await memberManager.GetRolesAsync(currentMember);
+    }
+
+    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
+    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
+    var blockClass = $"col-span-{columnSpan} row-span-{rowSpan}";
+
+    var alertClass = alertType switch
+    {
+        "success" => "bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-100 dark:border-green-700",
+        "warning" => "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-100 dark:border-yellow-700",
+        "error"   => "bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-100 dark:border-red-700",
+        _         => "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-100 dark:border-blue-700"
+    };
+
+    var iconSvg = alertType switch
+    {
+        "success" => "<svg class='w-6 h-6 text-green-600 dark:text-green-300' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' d='M5 13l4 4L19 7' /></svg>",
+        "warning" => "<svg class='w-6 h-6 text-yellow-600 dark:text-yellow-300' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' d='M12 9v2m0 4h.01M4.93 4.93l14.14 14.14' /></svg>",
+        "error"   => "<svg class='w-6 h-6 text-red-600 dark:text-red-300' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' d='M6 18L18 6M6 6l12 12' /></svg>",
+        _         => "<svg class='w-6 h-6 text-blue-600 dark:text-blue-300' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' d='M13 16h-1v-4h-1m1-4h.01M12 20h.01' /></svg>"
+    };
+
+    var targetAudienceList = content.Value<IEnumerable<string>>("targetAudience");
+    var targetAudience = targetAudienceList?.FirstOrDefault();
+
+    var matchesGroup = memberGroups.Intersect(currentGroups).Any();
+    var isMemberLoggedIn = User.Identity.IsAuthenticated;
+    var shouldDisplay = matchesGroup;
+
+    if (targetAudience == "everyone")
+    {
+        shouldDisplay = true;
+    }
+    else if (targetAudience == "loggedOut" && isMemberLoggedIn)
+    {
+        shouldDisplay = false;
+    }
+    else if (targetAudience == "loggedIn" && !isMemberLoggedIn)
+    {
+        shouldDisplay = false;
+    }
+}
+
+@if (shouldDisplay)
+{
+    <div class="@blockClass border-l-4 p-4 mb-4 rounded-md relative @alertClass">
+        @if (isClosable)
+        {
+            <button class="absolute top-2 right-2 text-xl text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white" onclick="this.parentElement.style.display='none';">×</button>
+        }
+
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0">@Html.Raw(iconSvg)</div>
+            <div>
+                <h1 class="text-lg font-semibold mb-2">@content.Value("alertHeading")</h1>
+                <div class="prose dark:prose-invert">@Html.Raw(content.Value("alertMessage"))</div>
+
+                @if (alertLinksRaw.Any())
+                {
+                    <ul class="mt-4 list-disc list-inside text-sm text-blue-700 dark:text-blue-300">
+                        @foreach (var link in alertLinksRaw)
+                        {
+                            var url = link.Value<string>("url");
+                            var name = link.Value<string>("name");
+                            var target = link.HasValue("target") ? link.Value<string>("target") : "_self";
+
+                            if (!string.IsNullOrWhiteSpace(url))
+                            {
+                                <li>
+                                    <a href="@url" target="@target" class="underline hover:text-blue-900 dark:hover:text-blue-100">
+                                        @name
+                                    </a>
+                                </li>
+                            }
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+}
+@alertType
