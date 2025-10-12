@@ -1,0 +1,51 @@
+@using Umbraco.Cms.Core.Models.PublishedContent
+@inject Umbraco.Cms.Web.Common.UmbracoHelper Umbraco
+@using Umbraco.Extensions
+@model IEnumerable<IPublishedContent>
+
+@{
+    var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
+}
+
+<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+    @foreach (var item in Model)
+    {
+        var title = item.Name;
+        var description = item.Value<string>("description");
+        var imageUrl = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
+        <article class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+            <a href="@item.Url()" class="group block h-full">
+                @if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    <div class="aspect-video overflow-hidden rounded-t-xl">                        
+                        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                            src="@imageUrl" 
+                            alt="@title"
+                            loading="lazy">
+                    </div>
+                }
+                else
+                {
+                    <div class="aspect-video flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-t-xl">                                
+                        <svg class="w-20 h-20 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                }
+
+                <div class="p-6 flex flex-col justify-between h-auto">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary dark:text-white mb-2 line-clamp-2">@title</h3> 
+                        @if (!string.IsNullOrWhiteSpace(description))
+                        {
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">@description</p> 
+                        }
+                    </div>
+                    <span class="inline-block mt-4 text-primary dark:text-white hover:text-blue-500 text-sm font-medium transition-colors duration-200">
+                        @viewMoreText
+                    </span>
+                </div>
+            </a>
+        </article>
+    }
+</div>

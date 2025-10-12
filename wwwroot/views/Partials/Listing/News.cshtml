@@ -1,0 +1,63 @@
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Extensions
+@inject Umbraco.Cms.Web.Common.UmbracoHelper Umbraco
+@model IEnumerable<IPublishedContent>
+
+@{
+    var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
+}
+<div class="p-6 bg-gray-100">
+  <div class="w-14 h-1 bg-primary mb-3">Heloo</div>
+  <div class="w-14 h-1 bg-yellow-400 mb-3"></div>
+</div>
+
+<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+    @foreach (var item in Model)
+    {
+        var title = item.Name;
+        var description = item.Value<string>("description");
+        var originalImageUrl = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
+        var isSvg = originalImageUrl?.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ?? false;
+        var imageUrl = originalImageUrl != null
+            ? (isSvg ? originalImageUrl : $"{originalImageUrl}?width=400&quality=80&format=webp")
+            : "/media/default/VTL_logo.svg";
+        var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url() ?? "/media/default/VTL_logo.svg";
+        <article class="card">
+            <a href="@item.Url()" class="group block h-full">
+                @* Hình ảnh chính *@
+                @if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    <div class="aspect-video overflow-hidden rounded-t-xl">
+                        <img class="card-image" 
+                            src="@imageUrl"
+                            alt="@title"
+                            loading="lazy">
+                    </div>
+                }
+                else
+                {
+                    <div class="aspect-video flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-t-xl">                                
+                        <svg class="w-20 h-20 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                }
+                <div class="p-6 flex flex-col justify-between h-auto">
+                    <div>                           
+                        <div class="border-t-2 border-primary w-1/6 mb-4"></div>
+                        <h3>@title</h3>
+                        @if (!string.IsNullOrWhiteSpace(description))
+                        {
+                            <p class="line-clamp-3" title="@description">
+                                @description
+                            </p>
+                        }
+                    </div>
+                    <span class="card-detail">
+                        @viewMoreText
+                    </span>
+                </div>
+            </a>
+        </article>
+    }
+</div>

@@ -2,23 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- Base styles (toàn site) --- */
+@layer base {
+  html {
+    @apply font-sans text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 antialiased;
+    font-family: 'Roboto', 'Roboto Condensed', system-ui, sans-serif;
+  }
+
+  body {
+    @apply leading-relaxed;
+  }
+
+  /* Heading styles */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-gray-900 text-primary dark:text-white;
+    font-family: 'Roboto Condensed', 'Roboto', sans-serif;
+  }
+  h1 { @apply text-4xl md:text-5xl tracking-tight mb-6; }
+  h2 { @apply text-3xl md:text-4xl tracking-tight mb-5; }
+  h3 { @apply text-2xl md:text-3xl mb-4; }
+  h4 { @apply text-xl md:text-2xl mb-3; }
+  h5 { @apply text-lg mb-2; }
+  h6 { @apply text-base uppercase tracking-wide mb-2; }
+  p {
+    @apply text-base text-gray-700 dark:text-gray-300 leading-relaxed;
+  }
+
+  a {
+    @apply hover:text-primary transition-colors;
+  }
+
+  strong {
+    @apply font-semibold text-gray-900 dark:text-white;
+  }
+
+  ::selection {
+    @apply bg-blue-200 text-black dark:bg-blue-600 dark:text-white;
+  }
+}
+
+/* --- Components (menu, clamp, v.v.) --- */
 @layer components {
   .menu-item {
     @apply px-3 py-2 text-gray-900 dark:text-white hover:text-primary transition-colors duration-200 ease-in-out block;
   }
+
   .menu-item-active {
     @apply font-semibold text-primary dark:text-primary;
   }
+
   .menu-sub-item:hover .menu-sub-item-hover\:rotate-90 {
     transform: rotate(90deg);
   }
+
   .menu-sub-item:hover .menu-sub-item-hover\:block {
     display: block;
   }
+
   .clamp-3-lines {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+}
+
+/* --- Buttons --- */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-white bg-primary hover:bg-secondary transition-all duration-200 ease-in-out shadow-sm;
+  font-family: 'Roboto Condensed', sans-serif;
+}
+
+.btn-outline {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium border border-primary text-primary hover:bg-primary hover:text-white transition-all duration-200 ease-in-out;
+  font-family: 'Roboto Condensed', sans-serif;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium bg-secondary text-white hover:bg-primary transition-all;
+  font-family: 'Roboto Condensed', sans-serif;
+}
+.block-wrapper {
+  @apply w-full p-4 md:p-6 bg-white dark:bg-gray-900 rounded-lg shadow-md;
+}
+
+/* --- Cards --- */
+.card {
+  @apply bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-2xl shadow-sm overflow-hidden transition-transform duration-300 ease-in-out relative;
+}
+
+.card:hover {
+  @apply shadow-2xl -translate-y-1 scale-[1.02] border-primary/40;
+}
+
+.card-header {
+  @apply px-5 py-3 border-b border-gray-200 dark:border-gray-700 font-semibold text-lg text-gray-900 dark:text-white;
+  font-family: 'Roboto Condensed', sans-serif;
+}
+.card-image {
+  @apply w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-105;
+}
+.card-body {
+  @apply p-5 text-gray-700 dark:text-gray-300;
+}
+.card-detail {
+  @apply inline-block mt-4 text-primary hover:text-secondary text-sm font-medium transition-colors duration-200 cursor-pointer;
+}
+
+  .card-footer {
+  @apply px-5 py-3 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400;
 }

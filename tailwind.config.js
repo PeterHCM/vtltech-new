@@ -8,7 +8,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['"Roboto"', '"Roboto Condensed"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        condensed: ['"Roboto Condensed"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['"Roboto Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
         primary: '#e06800',

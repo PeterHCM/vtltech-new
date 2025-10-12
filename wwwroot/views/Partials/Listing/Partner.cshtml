@@ -7,34 +7,36 @@
     var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
 }
 
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-4">
     @foreach (var item in Model)
     {
         var title = item.Value<string>("title") ?? item.Name;
         var description = item.Value<string>("description");
-        var imageUrl = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url() ?? "/media/default/VTL_logo.svg";
+        var originalImageUrl = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
+        var isSvg = originalImageUrl?.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ?? false;
+        var imageUrl = originalImageUrl != null
+            ? (isSvg ? originalImageUrl : $"{originalImageUrl}?width=400&quality=80&format=webp")
+            : "/media/default/VTL_logo.svg";
         var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url() ?? "/media/default/VTL_logo.svg";
-
-        <div class="group bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] overflow-hidden relative">
+        
+        <div class="group card hover:shadow-2xl hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 relative">
             <!-- Logo -->
             <div class="p-4 flex justify-center">
-                <img src="@iconUrl" alt="@title" class="w-auto h-20 object-contain" />
+                <img src="@iconUrl" alt="@title" class="w-auto h-6 object-contain" />
             </div>
 
             <!-- Hình ảnh minh họa -->
             <div class="aspect-video overflow-hidden relative">
                 <img src="@imageUrl" alt="@title"
-                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-105" />
+                     class="card-image" />
                 <div class="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
 
             <!-- Nội dung -->
-            <div class="p-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">@title</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-3" title="@description">@description</p>
-
-                <!-- Nút xem chi tiết -->
-                <div class="mt-4 text-right opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+            <div class="card-body">
+                <h3>@title</h3>
+                <p class="line-clamp-3" title="@description">@description</p>
+                <div class="mt-4 text-right hidden group-hover:flex transition-all duration-300">
                     <a href="@item.Url()" target="_blank" class="text-primary hover:text-secondary text-sm">@viewMoreText</a>
                 </div>
             </div>
