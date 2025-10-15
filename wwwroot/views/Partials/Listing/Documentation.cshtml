@@ -1,0 +1,159 @@
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Extensions
+@inject Umbraco.Cms.Web.Common.UmbracoHelper Umbraco
+
+@functions {
+    List<string> GetCategories(IPublishedContent doc)
+    {
+        var val = doc.Value("category");
+        return val switch
+        {
+            IEnumerable<string> list => list.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList(),
+            string s => s.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                         .Select(x => x.Trim()).Where(x => x.Length > 0).ToList(),
+            _ => new List<string>()
+        };
+    }
+}
+
+@{
+    var allDocuments = Umbraco.ContentAtRoot()
+        .SelectMany(root => root.DescendantsOfType("documentation"))
+        .ToList();
+
+    var mainCats = new[] { "Company Profile", "Manufacturer", "Technical" };
+    var allCategories = allDocuments
+        .SelectMany(GetCategories)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(c => c)
+        .ToList();
+
+    var categoryList = new List<string> { "All" };
+    categoryList.AddRange(mainCats);
+    if (allCategories.Except(mainCats, StringComparer.OrdinalIgnoreCase).Any())
+    {
+        categoryList.Add("Other");
+    }
+}
+<!-- Filter buttons -->
+<div class="flex flex-wrap justify-center gap-3 mt-10 mb-12 px-6">
+  @foreach (var cat in categoryList)
+  {
+      <button data-category="@cat"
+          class="filter-btn px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-primary hover:text-white transition">
+          @cat
+      </button>
+  }
+</div>
+
+<!-- Document Grid -->
+<div id="docGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 pb-16">
+  @foreach (var item in allDocuments)
+  {
+      var title = item.Value<string>("title") ?? item.Name;
+      var description = item.Value<string>("description");
+      var manufacturer = item.Value<string>("manufacturer");
+      var categories = GetCategories(item);
+      var updateDate = item.UpdateDate.ToString("dd/MM/yyyy");
+      var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url() ?? "/media/default/VTL_logo.svg";
+      var fileUrl = item.Url();
+
+      var categoryAttr = categories.Any() ? string.Join(",", categories) : "Other";
+
+      <div class="doc-card card group flex flex-col justify-between p-6" data-categories="@categoryAttr">
+        <div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary overflow-hidden">
+                <img src="@iconUrl" alt="@title" class="h-full w-auto object-contain" />
+            </div>
+            <h3 class="text-lg font-semibold leading-snug group-hover:text-primary transition-colors">@title</h3>
+          </div>
+
+          @if (!string.IsNullOrWhiteSpace(description))
+          {
+              <p class="text-sm clamp-3-lines mb-3">@description</p>
+          }
+          @if (!string.IsNullOrWhiteSpace(manufacturer))
+          {
+              <p class="text-sm mb-2"><strong>Manufacturer:</strong> @manufacturer</p>
+          }
+
+          <div class="flex items-center gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <span class="inline-flex items-center gap-1">
+                  <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 11h10M7 15h10" />
+                  </svg>
+                  @string.Join(", ", categories)
+              </span>
+              <span class="inline-flex items-center gap-1 ml-4">
+                  <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  @updateDate
+              </span>
+          </div>
+        </div>
+
+        <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between items-center">
+          @if (!string.IsNullOrWhiteSpace(fileUrl))
+          {
+              <a href="@fileUrl" target="_blank" rel="noopener noreferrer"
+                 class="card-detail inline-flex items-center gap-2 text-primary hover:underline">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                  </svg>
+                  Download
+              </a>
+          }
+          else
+          {
+              <span class="text-sm text-gray-400 dark:text-gray-500 italic">No file</span>
+          }
+        </div>
+      </div>
+  }
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const filterButtons = document.querySelectorAll(".filter-btn");
+  const docCards = document.querySelectorAll(".doc-card");
+  const mainCategories = ["Company Profile", "Manufacturer", "Technical"];
+
+  function filterDocs(category) {
+    docCards.forEach(card => {
+      const cardCategories = (card.dataset.categories || "").split(",").map(c => c.trim());
+      const isMain = cardCategories.some(c => mainCategories.includes(c));
+
+      let show = false;
+      if (category === "All") show = true;
+      else if (category === "Other") show = !isMain;
+      else show = cardCategories.includes(category);
+
+      card.style.display = show ? "block" : "none";
+    });
+
+    filterButtons.forEach(btn => {
+      const isActive = btn.dataset.category === category;
+      btn.classList.toggle("bg-primary", isActive);
+      btn.classList.toggle("text-white", isActive);
+    });
+  }
+
+  const initialCategory = decodeURIComponent(location.hash.replace("#", "")) || "All";
+  filterDocs(initialCategory);
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const category = btn.dataset.category;
+      location.hash = encodeURIComponent(category);
+      filterDocs(category);
+    });
+  });
+
+  window.addEventListener("hashchange", () => {
+    const newCategory = decodeURIComponent(location.hash.replace("#", "")) || "All";
+    filterDocs(newCategory);
+  });
+});
+</script>
