@@ -53,12 +53,13 @@ module.exports = {
           css: {
             color: theme('colors.gray.800'),
             'h1, h2, h3, h4, h5, h6': {
-              color: theme('colors.gray.900'),
+              color: theme('colors.primary'),
             },
             'a': {
-              color: theme('colors.blue.600'),
+              color: theme('colors.gray.800'),
+              textDecoration: 'none',
               '&:hover': {
-                color: theme('colors.blue.800'),
+                color: theme('colors.primary'),
               },
             },
             'blockquote': {
@@ -74,6 +75,9 @@ module.exports = {
             },
             'code::before': { content: '""' },
             'code::after': { content: '""' },
+            'li::marker': {
+                color: theme('colors.gray.800'),
+            },
           },
         },
         dark: {
@@ -86,9 +90,10 @@ module.exports = {
               color: theme('colors.white'),
             },
             'a': {
-              color: theme('colors.blue.400'),
+              color: theme('colors.gray.200'),
+              textDecoration: 'none',
               '&:hover': {
-                color: theme('colors.blue.300'),
+                color: theme('colors.primary'),
               },
             },
             'blockquote': {
@@ -101,6 +106,9 @@ module.exports = {
             },
             'li': {
               color: theme('colors.gray.200'),
+            },
+            'li::marker': {
+                color: theme('colors.gray.200'),
             },
           },
         },

@@ -29,9 +29,8 @@
   }
 
   a {
-    @apply hover:text-primary transition-colors;
+    @apply no-underline hover:text-primary transition-colors;
   }
-
   strong {
     @apply font-semibold text-gray-900 dark:text-white;
   }
