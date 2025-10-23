@@ -154,3 +154,61 @@
 .card-footer {
   @apply px-6 py-4 border-t border-gray-100 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400;
 }
+/* ---------------------------------------------------------------------------------- */
+/* --- CUSTOM PRINT STYLES (Chỉ In Nội Dung Cụ Thể) --- */
+/* ---------------------------------------------------------------------------------- */
+@page {
+    /* Lề giấy (top right bottom left): 0.5in 0.5in 0.5in 1in */
+    margin: 0.5in 0.5in 0.5in 1in; 
+    size: A4 portrait;
+}
+@media print {
+    /* BƯỚC 1: Ẩn toàn bộ nội dung */
+    body * {
+        visibility: hidden !important;
+    }
+
+    /* BƯỚC 2: Hiện lại và Tối ưu hóa khu vực cần in */
+    .print-only-content,
+    .print-only-content * {
+        visibility: visible !important;
+        
+        /* ĐẢM BẢO CHỮ LÀ MÀU ĐEN VÀ NỀN TRẮNG */
+        color: black !important;
+        background-color: white !important;
+        text-shadow: none !important;
+    }
+
+    /* BƯỚC 3: Tối ưu hóa Layout: Bỏ vị trí tuyệt đối và Margin/Padding */
+    .print-only-content {
+        /* Bỏ position/left/top để tôn trọng lề đã đặt trong @page */
+        position: static !important;
+        float: none !important; /* Loại bỏ float nếu có */
+        
+        /* Đảm bảo không có margin hay padding nội bộ */
+        margin: 0 !important;
+        padding: 0 !important; 
+        width: 100% !important;
+    }
+    
+    /* Ghi đè màu đen cho các thành phần đặc biệt (headings, links, strong) */
+    .print-only-content h1,
+    .print-only-content h2,
+    .print-only-content h3,
+    .print-only-content h4,
+    .print-only-content a,
+    .print-only-content strong {
+        color: black !important;
+    }
+
+    /* Loại bỏ gạch chân của link (nếu cần) hoặc đặt lại */
+    .print-only-content a {
+        text-decoration: underline !important; /* Thêm gạch chân cho link khi in */
+    }
+
+    /* Loại bỏ các box-shadow và border-color đậm */
+    .print-only-content * {
+        box-shadow: none !important;
+        border-color: #ccc !important; 
+    }
+}

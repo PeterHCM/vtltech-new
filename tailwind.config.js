@@ -114,6 +114,17 @@ module.exports = {
       }),
     },
   },
+  // THÊM BIẾN THỂ 'PRINT' VÀO ĐÂY
+  variants: {
+    extend: {
+      visibility: ['print'],
+      display: ['print'],
+      position: ['print'],
+      margin: ['print'],
+      padding: ['print'],
+      width: ['print'],
+    },
+  },
   safelist: [
     'peer-checked:rotate-90',
     'delay-[0ms]', 'delay-[50ms]', 'delay-[100ms]', 'delay-[150ms]', 'delay-[200ms]', 'delay-[250ms]', 'delay-[300ms]',
