@@ -1,74 +1,86 @@
-@inherits UmbracoViewPage<IPublishedContent>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Extensions
 
 @{
     var currentPage = Model;
     var title = currentPage.Name;
-    var description = currentPage.Value<string>("pageDescription"); // optional
+    var description = currentPage.Value<string>("pageDescription");
     var ancestors = currentPage.Ancestors().Where(x => x.Level > 1).OrderBy(x => x.Level).ToList();
-    var bannerImage = currentPage.Value<IPublishedContent>("bannerImage");
     var currentDomain = Context.Request.Host.Value;
+    var currentCulture = Context.Features.Get<Microsoft.AspNetCore.Localization.IRequestCultureFeature>()?.RequestCulture.Culture.Name ?? "vi-VN";
+    var isVietnamese = currentCulture == "vi-VN";
     var isIntranet = currentDomain.Contains("intranet");
-    var ogImage = currentPage.Value<IPublishedContent>("ogImage");
-    var imageUrl = ogImage?.Url() ?? bannerImage?.Url() ?? "https://n.vtltech.com.vn/media/wmld4zgl/vtl_eaton_mtl.png";
+    var image = currentPage.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
+    var imageUrl = image ?? "/media/wmld4zgl/vtl_eaton_mtl.png";
+    var path = Context.Request.Path.Value?.ToLowerInvariant() ?? "";
+    var isMinimalPage = path.Contains("/su-kien") || path.Contains("/events") || path.Contains("/landing");
 }
-@if(!isIntranet)
+
+@if (!isIntranet && !isMinimalPage)
 {
-    <section class="relative py-10">
+    <section class="relative py-12 md:py-20 lg:py-28 bg-gray-50 dark:bg-gray-950">
         <div class="absolute inset-0">
-            <img src="@imageUrl" alt="Banner" class="w-full h-full object-cover opacity-50" />
+            <div class="absolute inset-0 bg-black/40 dark:bg-black/60 z-0"></div>
+            <img src="@imageUrl" alt="Banner" class="w-full h-full object-cover opacity-60 dark:opacity-40" loading="lazy" />
         </div>
-        <div class="relative z-10 mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
-            <!-- Breadcrumb -->
-            <nav aria-label="Breadcrumb" class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+        <div class="relative z-10 mx-auto px-6 md:px-12 lg:px-24 max-w-7xl text-white">
+            <nav aria-label="Breadcrumb" class="mb-4 text-sm text-gray-200 dark:text-gray-300">
                 <ol class="flex flex-wrap items-center space-x-2">
                     <li>
-                        <a href="/" class="hover:text-primary font-medium">Trang chủ</a>
+                        <a href="/" class="hover:text-primary dark:hover:text-amber-400 font-medium transition duration-150">
+                            @(isVietnamese ? "Trang chủ" : "Home")
+                        </a>
                     </li>
                     @foreach (var ancestor in ancestors)
                     {
                         <li>
                             <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
-                            <a href="@ancestor.Url()" class="hover:text-primary dark:hover:text-white">@ancestor.Name</a>
+                            <a href="@ancestor.Url()" class="hover:text-primary dark:hover:text-amber-400 transition duration-150">@ancestor.Name</a>
                         </li>
                     }
                     <li>
                         <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
-                        <span class="text-gray-800 dark:text-white font-semibold">@title</span>
+                        <span class="text-white font-semibold" aria-current="page">@title</span>
                     </li>
                 </ol>
             </nav>
 
-            <!-- Tiêu đề -->
-            <h2 class="text-3xl md:text-5xl font-bold text-gray-800 dark:text-white">@title</h2>
+            <h1 class="text-3xl md:text-5xl lg:text-6xl font-extrabold text-white">@title</h1>
 
-            <!-- Mô tả ngắn -->
             @if (!string.IsNullOrWhiteSpace(description))
             {
-                <p class="mt-4 text-lg text-gray-600 dark:text-gray-300">@description</p>
+                <p class="mt-4 text-lg md:text-xl text-gray-200">@description</p>
             }
         </div>
     </section>
 }
-else
+else @if (!isMinimalPage)
 {
-    <div class="mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
-        <nav aria-label="Breadcrumb" class="my-4">
+    <div class="mx-auto px-6 md:px-12 lg:px-24 max-w-7xl py-4">
+        <nav aria-label="Breadcrumb" class="my-2">
             <ol class="flex flex-wrap items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
                 <li>
-                    <a href="/" class="hover:text-primary dark:hover:text-white font-medium">Trang chủ</a>
+                    <a href="/" class="hover:text-primary dark:hover:text-white font-medium transition duration-150">
+                        @(isVietnamese ? "Trang chủ" : "Home")
+                    </a>
                 </li>
                 @foreach (var ancestor in ancestors)
                 {
                     <li>
                         <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
-                        <a href="@ancestor.Url()" class="hover:text-primary dark:hover:text-white">@ancestor.Name</a>
+                        <a href="@ancestor.Url()" class="hover:text-primary dark:hover:text-white transition duration-150">@ancestor.Name</a>
                     </li>
                 }
                 <li>
                     <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
-                    <span class="text-gray-800 dark:text-white font-semibold" aria-current="page">@currentPage.Name</span>
+                    <span class="text-gray-800 dark:text-white font-semibold" aria-current="page">@title</span>
                 </li>
             </ol>
         </nav>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-2 mb-4">@title</h1>
+        @if (!string.IsNullOrWhiteSpace(description))
+        {
+            <p class="text-base text-gray-700 dark:text-gray-300">@description</p>
+        }
     </div>
 }

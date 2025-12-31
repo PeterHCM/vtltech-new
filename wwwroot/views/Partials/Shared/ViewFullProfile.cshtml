@@ -1,0 +1,116 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@using Umbraco.Cms.Core.Services
+@using Umbraco.Cms.Web.Common.Security
+@using Umbraco.Cms.Web.Website.Controllers
+@using Umbraco.Cms.Web.Website.Models
+@using Umbraco.Extensions
+@using System.Linq
+@inject MemberModelBuilderFactory memberModelBuilderFactory
+
+@{
+    var profileModel = await memberModelBuilderFactory
+        .CreateProfileModel()
+        .WithRedirectUrl(null)
+        .WithCustomProperties(true)
+        .BuildForCurrentMemberAsync();
+
+    var success = TempData["FormSuccess"] != null;
+
+    var query = Context.Request.Query.ToDictionary(k => k.Key, v => v.Value.ToString());
+    query.Remove("tab");
+    string baseQuery = string.Join("&", query.Select(kv => $"{kv.Key}={kv.Value}"));
+    string buildTabUrl(string tab) => $"{Context.Request.Path}?{baseQuery}&tab={tab}";
+
+    var activeTab = Context.Request.Query["tab"].ToString().ToLower();
+    if (string.IsNullOrWhiteSpace(activeTab)) activeTab = "account";
+
+    string tabClass(string tab) =>
+        tab == activeTab
+        ? "flex items-center gap-2 px-4 py-2 font-semibold text-white bg-primary rounded"
+        : "flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary";
+
+    string inputClass = "block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-primary focus:border-primary";
+
+    var dateAliases = new[] { "dateofbirth", "dateofissue", "dateofjoining" };
+
+    var dropdownOptions = new Dictionary<string, List<string>>
+    {
+        { "maritalstatus", new List<string> { "Độc thân", "Đã kết hôn", "Ly hôn" } },
+        { "contracttype", new List<string> { "Toàn thời gian", "Bán thời gian", "Thử việc" } },
+        { "position", new List<string> { "Nhân viên", "Trưởng nhóm", "Quản lý" } },
+        { "department", new List<string> { "Kế toán", "Kỹ thuật", "Nhân sự" } },
+        { "emergencycontact1relationship", new List<string> { "Cha", "Mẹ", "Anh/Chị", "Bạn bè" } },
+        { "emergencycontact2relationship", new List<string> { "Cha", "Mẹ", "Anh/Chị", "Bạn bè" } }
+    };
+}
+
+@if (profileModel != null)
+{
+    <div class="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+        @if (success)
+        {
+            <div class="mb-4 text-green-600 dark:text-green-400 text-sm">
+                ✅ Cập nhật tài khoản thành công!
+            </div>
+        }
+
+        <div class="mb-6 flex gap-4 flex-wrap">
+            <a href="@buildTabUrl("account")" class="@tabClass("account")">🔐 Tài khoản</a>
+            <a href="@buildTabUrl("personal")" class="@tabClass("personal")">🧍 Cá nhân</a>
+            <a href="@buildTabUrl("work")" class="@tabClass("work")">💼 Công việc</a>
+            <a href="@buildTabUrl("emergency1")" class="@tabClass("emergency1")">🚨 Khẩn cấp 1</a>
+            <a href="@buildTabUrl("emergency2")" class="@tabClass("emergency2")">🚨 Khẩn cấp 2</a>
+        </div>
+
+        @using (Html.BeginUmbracoForm<UmbProfileController>("HandleUpdateProfile", new { RedirectUrl = Context.Request.Path + Context.Request.QueryString }))
+        {
+            <div asp-validation-summary="All" class="text-sm text-red-600 dark:text-red-400 mb-4"></div>
+
+            @if (profileModel.MemberProperties != null)
+            {
+                var filtered = profileModel.MemberProperties.Where(p =>
+                    (activeTab == "account" && new[] { "fullname", "phone", "personalemail" }.Contains(p.Alias.ToLower())) ||
+                    (activeTab == "personal" && new[] {
+                        "gender", "maritalstatus", "dateofbirth", "nationalid", "dateofissue", "placeofissue", "taxcode", "permanentaddress", "currentaddress"
+                    }.Contains(p.Alias.ToLower())) ||
+                    (activeTab == "work" && new[] {
+                        "position", "department", "dateofjoining", "contracttype"
+                    }.Contains(p.Alias.ToLower())) ||
+                    (activeTab == "emergency1" && p.Alias.ToLower().StartsWith("emergencycontact1")) ||
+                    (activeTab == "emergency2" && p.Alias.ToLower().StartsWith("emergencycontact2"))
+                );
+
+                foreach (var prop in filtered)
+                {
+                    var alias = prop.Alias.ToLower();
+                    <div class="mb-4">
+                        <label class="block font-medium mb-1 text-gray-700 dark:text-gray-300">@prop.Name</label>
+
+                        @if (dropdownOptions.ContainsKey(alias))
+                        {
+                            <select name="MemberProperties[@prop.Alias]" class="@inputClass">
+                                @foreach (var option in dropdownOptions[alias])
+                                {
+                                    <option value="@option" selected="@(option == prop.Value ? "selected" : null)">@option</option>
+                                }
+                            </select>
+                        }
+                        else if (dateAliases.Contains(alias))
+                        {
+                            <input type="date" name="MemberProperties[@prop.Alias]" value="@prop.Value" class="@inputClass" />
+                        }
+                        else
+                        {
+                            <input type="text" name="MemberProperties[@prop.Alias]" value="@prop.Value" class="@inputClass" />
+                        }
+                    </div>
+                }
+            }
+
+            <button type="submit" class="w-full bg-primary hover:bg-secondary text-white font-medium py-2 px-4 rounded transition duration-200">
+                Lưu thay đổi
+            </button>
+        }
+    </div>
+}

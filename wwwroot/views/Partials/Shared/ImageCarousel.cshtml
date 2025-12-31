@@ -1,0 +1,91 @@
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+@model IEnumerable<IPublishedContent>
+
+@{
+    var keyShort = ViewData["KeyShort"]?.ToString() ?? Guid.NewGuid().ToString("N")[..8];
+}
+
+@if (Model?.Any() == true)
+{
+    <div class="relative w-full overflow-hidden rounded-lg">
+        <div id="carousel-@keyShort" class="flex transition-transform duration-500 ease-in-out">
+            @foreach (var img in Model)
+            {
+                <div class="w-full flex-shrink-0 aspect-[16/9] overflow-hidden group">
+                    <img src="@img.Url()" alt="@img.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110" loading="lazy" />
+                </div>
+            }
+        </div>
+
+        <button onclick="prevSlide('@keyShort')" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/20 dark:bg-white/10 text-white p-2 rounded-full hover:bg-white/40 dark:hover:bg-white/20 transition-colors" aria-label="Previous slide">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+
+        <button onclick="nextSlide('@keyShort')" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 dark:bg-white/10 text-white p-2 rounded-full hover:bg-white/40 dark:hover:bg-white/20 transition-colors" aria-label="Next slide">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const key = "@keyShort";
+                const carousel = document.getElementById("carousel-" + key);
+                if (!carousel) return;
+
+                const track = carousel;
+                const totalSlides = track.children.length;
+                let currentIndex = 0;
+                let slideInterval;
+                const intervalTime = 5000;
+
+                if (totalSlides <= 1) {
+                    carousel.closest('.relative')?.querySelectorAll('button').forEach(btn => btn.style.display = 'none');
+                    return;
+                }
+
+                function updateSlide() {
+                    track.style.transform = `translateX(-${currentIndex * 100}%)`;
+                }
+
+                function startAutoSlide() {
+                    clearInterval(slideInterval);
+                    slideInterval = setInterval(() => {
+                        currentIndex = (currentIndex + 1) % totalSlides;
+                        updateSlide();
+                    }, intervalTime);
+                }
+
+                const controller = {
+                    next() {
+                        clearInterval(slideInterval);
+                        currentIndex = (currentIndex + 1) % totalSlides;
+                        updateSlide();
+                        startAutoSlide();
+                    },
+                    prev() {
+                        clearInterval(slideInterval);
+                        currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+                        updateSlide();
+                        startAutoSlide();
+                    }
+                };
+
+                window.carouselRegistry = window.carouselRegistry || {};
+                if (!window.nextSlide) {
+                    window.nextSlide = k => window.carouselRegistry[k]?.next();
+                    window.prevSlide = k => window.carouselRegistry[k]?.prev();
+                }
+
+                window.carouselRegistry[key] = controller;
+
+                startAutoSlide();
+                carousel.addEventListener('mouseenter', () => clearInterval(slideInterval));
+                carousel.addEventListener('mouseleave', startAutoSlide);
+            });
+        </script>
+    </div>
+}

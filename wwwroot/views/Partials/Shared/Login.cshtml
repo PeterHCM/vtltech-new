@@ -1,0 +1,107 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+
+@using Umbraco.Cms.Web.Common.Models
+@using Umbraco.Cms.Web.Common.Security
+@using Umbraco.Cms.Web.Website.Controllers
+@using Umbraco.Cms.Core.Services
+@using Umbraco.Extensions
+@inject IMemberExternalLoginProviders memberExternalLoginProviders
+@inject ITwoFactorLoginService twoFactorLoginService
+@{
+    var loginModel = new LoginModel();
+    // You can modify this to redirect to a different URL instead of the current one
+    var homePage = Umbraco.ContentAtRoot().FirstOrDefault();
+    var returnUrl =  Context.Request.Path + Context.Request.QueryString;
+    loginModel.RedirectUrl = !string.IsNullOrEmpty(returnUrl) 
+                             ? returnUrl 
+                             : homePage?.Url();
+
+}
+@if (ViewData.TryGetTwoFactorProviderNames(out var providerNames))
+{
+    foreach (var providerName in providerNames)
+    {
+        <div class="mb-6 p-4 py-8 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900">
+            <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Two factor with @providerName.</h4>
+            <div asp-validation-summary="All" class="text-sm text-red-600 dark:text-red-400 mb-2"></div>
+            @using (Html.BeginUmbracoForm<UmbTwoFactorLoginController>(nameof(UmbTwoFactorLoginController.Verify2FACode)))
+            {
+                <text>
+                    <input type="hidden" name="provider" value="@providerName" />
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Input security code:</label>
+                    <input name="code" value="" class="mb-3 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                    <button type="submit" class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900 transition">Validate</button>
+                    <div asp-validation-summary="ModelOnly" class="text-sm text-red-600 dark:text-red-400 mt-2"></div>
+                </text>
+            }
+        </div>
+    }
+}
+else
+{
+    <div class="login-form max-w-md mx-auto p-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+
+        @using (Html.BeginUmbracoForm<UmbLoginController>("HandleLogin", new { RedirectUrl = loginModel.RedirectUrl }))
+        {
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Vui lòng đăng nhập</h2>
+            <hr class="border-gray-300 dark:border-gray-700 mb-4" />
+            <div asp-validation-summary="All" class="text-sm text-red-600 dark:text-red-400 mb-4"></div>
+
+            <div class="mb-4">
+                <label asp-for="@loginModel.Username" class="block text-sm font-medium text-gray-700 dark:text-gray-300"></label>
+                <input asp-for="@loginModel.Username" class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                <span asp-validation-for="@loginModel.Username" class="text-sm text-red-600 dark:text-red-400"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="@loginModel.Password" class="block text-sm font-medium text-gray-700 dark:text-gray-300"></label>
+                <input asp-for="@loginModel.Password" class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                <span asp-validation-for="@loginModel.Password" class="text-sm text-red-600 dark:text-red-400"></span>
+            </div>
+
+            <div class="mb-4 flex items-center">
+                <input asp-for="@loginModel.RememberMe" class="h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500 dark:bg-gray-700 dark:checked:bg-indigo-600">
+                <label asp-for="@loginModel.RememberMe" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                    @Html.DisplayNameFor(m => loginModel.RememberMe)
+                </label>
+            </div>
+
+            <button type="submit" class="inline-block bg-primary text-white px-6 py-2 rounded hover:bg-secondary transition">
+                Log in
+            </button>
+        }
+
+        @{
+            var loginProviders = await memberExternalLoginProviders.GetMemberProvidersAsync();
+            var externalSignInError = ViewData.GetExternalSignInProviderErrors();
+
+            if (loginProviders.Any())
+            {
+                <hr class="border-gray-300 dark:border-gray-700 my-6" />
+                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Or using external providers</h4>
+
+                if (externalSignInError?.AuthenticationType is null && externalSignInError?.Errors.Any() == true)
+                {
+                    @Html.DisplayFor(x => externalSignInError.Errors);
+                }
+
+                @foreach (var login in await memberExternalLoginProviders.GetMemberProvidersAsync())
+                {
+                    @using (Html.BeginUmbracoForm<UmbExternalLoginController>(nameof(UmbExternalLoginController.ExternalLogin)))
+                    {
+                        <button type="submit" name="provider" value="@login.ExternalLoginProvider.AuthenticationType"
+                                class="w-full py-2 px-4 mb-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900 transition">
+                            Sign in with @login.AuthenticationScheme.DisplayName
+                        </button>
+
+                        if (externalSignInError?.AuthenticationType == login.ExternalLoginProvider.AuthenticationType)
+                        {
+                            @Html.DisplayFor(x => externalSignInError.Errors);
+                        }
+                    }
+                }
+            }
+        }
+    </div>
+}

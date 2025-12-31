@@ -1,0 +1,29 @@
+@inherits UmbracoViewPage<BlockGridItem>
+@using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Extensions
+@{
+    var content = Model.Content;
+    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
+    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
+    var blockClass = $"col-span-12 row-span-12 sm:col-span-{columnSpan} sm:row-span-{rowSpan}";
+    var title = content.Value<string>("title");
+    var subTitle = content.Value<string>("subTitle");
+    var partner = content.Value<IEnumerable<IPublishedContent>>("partner");
+}
+<div class="@blockClass">
+    <div class="block-wrapper py-10 px-4 md:px-10">
+        @if (!string.IsNullOrWhiteSpace(title))
+        {
+            <h2 class="text-center">@title</h2>
+        }
+        @if (!string.IsNullOrWhiteSpace(subTitle))
+        {
+            <h4 class="text-secondary text-center">@subTitle</h4>
+        }
+        @if (partner != null)
+        {
+            @await Html.PartialAsync("Partials/Listing/Partner", partner)
+        }
+    </div> 
+</div>

@@ -1,0 +1,42 @@
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Extensions
+@inject Umbraco.Cms.Web.Common.UmbracoHelper Umbraco
+@model IEnumerable<IPublishedContent>
+
+@{
+    var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
+}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-8">
+    @foreach (var item in Model)
+    {
+        var title = item.Value<string>("title") ?? item.Name;
+        var description = item.Value<string>("description")?.Replace("\n", "<br />");
+        string GetImageUrl(IEnumerable<IPublishedContent> images, int width = 400)
+        {
+            var imgUrl = images?.FirstOrDefault()?.Url();
+            if (string.IsNullOrWhiteSpace(imgUrl)) return "/media/default/VTL_logo.svg";
+            return imgUrl.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+                ? imgUrl
+                : $"{imgUrl}?width={width}&quality=80&format=webp";
+        }
+        var imageUrl = GetImageUrl(item.Value<IEnumerable<IPublishedContent>>("image"));
+        var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url() ?? "/media/default/VTL_logo.svg";
+        <div class="group card relative">        
+            <div class="aspect-video overflow-hidden relative">
+                <img src="@imageUrl" alt="@title" class="card-image" />
+                <div class="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </div>
+            <div class="p-4 flex justify-center">
+                <img src="@iconUrl" alt="@title" class="w-auto h-12 object-contain" />
+            </div>
+            <div class="card-body">
+                <h3>@title</h3>
+                <p class="line-clamp-3" title="@description">@Html.Raw(description)</p>
+                <div class="mt-4 text-right hidden group-hover:flex transition-all duration-300">
+                <a href="@item.Url()" class="card-detail">@viewMoreText</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

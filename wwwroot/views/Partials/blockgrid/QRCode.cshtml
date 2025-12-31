@@ -1,0 +1,42 @@
+@inherits UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+
+@{
+    var content = Model.Content;
+    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
+    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
+    var blockClass = $"col-span-12 sm:col-span-{columnSpan} sm:row-span-{rowSpan}";
+    var title = content.Value<string>("title");
+    var description = (content.Value<string>("description")?? "").Replace("\n", "<br />");
+    var link = content.Value<IEnumerable<Link>>("links")?.FirstOrDefault();
+    var linkUrl = link?.Url;    
+    var linkTarget = link?.Target;
+    var domain = $"{Context.Request.Scheme}://{Context.Request.Host.Value}";
+    var fullUrl = !string.IsNullOrWhiteSpace(linkUrl) && !linkUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+        ? $"{domain}{linkUrl}"
+        : linkUrl;        
+    var qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={Uri.EscapeDataString(fullUrl ?? domain)}";
+}
+<div class="@blockClass">
+    <div class="block-wrapper flex flex-col justify-center items-center sm:items-start text-center sm:text-left">
+        @if (!string.IsNullOrWhiteSpace(title))
+        {
+            <h3>@title</h3>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(description))
+        {
+            <p>@Html.Raw(description)</p>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(linkUrl))
+        {
+            <div class="flex justify-center items-center my-4">
+                <a href="@linkUrl" target="@linkTarget" rel="noopener noreferrer">
+                    <img src="@qrUrl" alt="QR Code" class="h-20 w-20 rounded shadow-md" loading="lazy" />
+                </a>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,37 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
+
+@{
+    Layout = "layout.cshtml";
+    var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
+    var fallbackPartial = "Partials/blockgrid/Default";
+    var title = Model.HasValue("title") 
+        ? Model.Value<string>("title") 
+        : Model.Name;
+    var description = (Model.Value<string>("description")?? "").Replace("\n", "<br />");
+}
+@await Html.PartialAsync("Partials/Shared/banner", Model)
+@if (blocks?.Any() == true)
+{
+    <section class="container-main Landing">
+        @if (!string.IsNullOrWhiteSpace(title))
+        {
+            <h3>@title</h3>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(description))
+        {
+            <p>@Html.Raw(description)</p>
+        }
+        <div class="grid grid-cols-12 auto-rows-min gap-4">
+            @foreach (var block in blocks)
+            {
+                var alias = block.Content.ContentType.Alias;
+                var partialPath = $"Partials/blockgrid/{alias}";
+                var viewResult = viewEngine.FindView(ViewContext, partialPath, isMainPage: false);
+                var partialToRender = viewResult.Success ? partialPath : fallbackPartial;
+                @await Html.PartialAsync(partialToRender, block)
+            }
+        </div>
+    </section>
+}

@@ -1,0 +1,140 @@
+@using System
+@using System.Globalization
+@model Dictionary<string, object>
+
+@{
+    // Khối C# (Logic lấy dữ liệu) KHÔNG thay đổi.
+    
+    // Hàm hỗ trợ lấy giá trị string từ Dictionary
+    string GetStringValue(string key) => Model.TryGetValue(key, out object value) ? value as string : null;
+    
+    // Hàm hỗ trợ lấy giá trị DateTime? từ Dictionary
+    DateTime? GetDateTimeValue(string key) => 
+        Model.TryGetValue(key, out object value) && value is DateTime dateTimeValue ? (DateTime?)dateTimeValue : null;
+
+    string documentId = GetStringValue("DocumentId");
+    string revision = GetStringValue("Revision");
+    string documentType = GetStringValue("DocumentType");
+    string departments = GetStringValue("Departments");
+    string approvalStatus = GetStringValue("ApprovalStatus");
+    string author = GetStringValue("Author");
+    DateTime? publicationDate = GetDateTimeValue("PublicationDate");
+    DateTime? lastRevisedDate = GetDateTimeValue("LastRevisedDate");
+
+    // Tạo danh sách các giá trị để kiểm tra một lần duy nhất
+    var hasMetadata = !string.IsNullOrEmpty(documentId) ||
+                      !string.IsNullOrEmpty(documentType) ||
+                      !string.IsNullOrEmpty(departments) ||
+                      !string.IsNullOrEmpty(approvalStatus) ||
+                      !string.IsNullOrEmpty(revision) ||
+                      !string.IsNullOrEmpty(author) ||
+                      publicationDate.HasValue ||
+                      lastRevisedDate.HasValue;
+}
+
+@if (hasMetadata)
+{
+    @* KHỐI CONTAINER CHÍNH: Thay đổi để hỗ trợ cả Light và Dark *@
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 p-6 my-8 rounded-xl 
+                border border-gray-200 dark:border-gray-700 
+                bg-gray-50 dark:bg-gray-800 shadow-lg">
+        
+        @* Cột 1: Mã Tài liệu (Nổi bật nhất) *@
+        @if (!string.IsNullOrEmpty(documentId))
+        {
+            @* LIGHT: bg-gray-100, DARK: bg-gray-700 *@
+            <div class="flex items-start space-x-3 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <svg class="w-5 h-5 mt-1 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <div>
+                    @* LIGHT: text-gray-500, DARK: text-gray-400 *@
+                    <strong class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mã tài liệu</strong>
+                    @* LIGHT: text-green-700, DARK: text-green-300 *@
+                    <span class="block mt-0.5 text-lg font-bold text-green-700 dark:text-green-300">@documentId</span>
+                </div>
+            </div>
+        }
+        
+        @* Các cột còn lại được tối ưu cho cả Light và Dark *@
+        
+        @* Cột 2: Lần ban hành (Revision) *@
+        @if (!string.IsNullOrEmpty(revision))
+        {
+            <div class="flex items-start space-x-3 p-2">
+                <svg class="w-5 h-5 mt-1 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+                <div>
+                    <strong class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lần ban hành</strong>
+                    <span class="block mt-0.5 text-blue-600 dark:text-blue-300 font-semibold">@revision</span>
+                </div>
+            </div>
+        }
+
+        @* Cột 3: Loại Tài liệu *@
+        @if (!string.IsNullOrEmpty(documentType))
+        {
+            <div class="flex items-start space-x-3 p-2">
+                <svg class="w-5 h-5 mt-1 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <div>
+                    <strong class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Loại Tài liệu</strong>
+                    <span class="block mt-0.5 text-gray-800 dark:text-gray-300">@documentType</span>
+                </div>
+            </div>
+        }
+
+        @* Cột 4: Phòng ban *@
+        @if (!string.IsNullOrEmpty(departments))
+        {
+            <div class="flex items-start space-x-3 p-2">
+                <svg class="w-5 h-5 mt-1 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M9 20H4v-2a3 3 0 015-2.236M9 20v-2a3 3 0 00-5.356-1.857M12 11a7 7 0 100-14 7 7 0 000 14z"></path></svg>
+                <div>
+                    <strong class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Phòng ban</strong>
+                    <span class="block mt-0.5 text-gray-800 dark:text-gray-300">@departments</span>
+                </div>
+            </div>
+        }
+
+        @* Cột 5: Tình trạng Phê duyệt *@
+        @if (!string.IsNullOrEmpty(approvalStatus))
+        {
+            <div class="flex items-start space-x-3 p-2">
+                <svg class="w-5 h-5 mt-1 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.24a2 2 0 010 2.828l-4.242 4.243-4.243-4.243a2 2 0 012.828-2.828z"></path></svg>
+                <div>
+                    <strong class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tình trạng Phê duyệt</strong>
+                    <span class="block mt-0.5 text-gray-800 dark:text-gray-300">@approvalStatus</span>
+                </div>
+            </div>
+        }
+
+        @* Cột 6: Ngày Ban hành *@
+        @if (publicationDate.HasValue)
+        {
+            <div class="flex items-start space-x-3 p-2">
+                <svg class="w-5 h-5 mt-1 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <div>
+                    <strong class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ngày Ban hành</strong>
+                    <span class="block mt-0.5 text-gray-800 dark:text-gray-300">@publicationDate.Value.ToString("dd/MM/yyyy")</span>
+                </div>
+            </div>
+        }
+        
+        @* Cột 7: Ngày Sửa đổi Gần nhất *@
+        @if (lastRevisedDate.HasValue)
+        {
+            <div class="flex items-start space-x-3 p-2">
+                <svg class="w-5 h-5 mt-1 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11.412 10.412a8.001 8.001 0 01-14.232 0M20 13v-5h-.581"></path></svg>
+                <div>
+                    <strong class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ngày Sửa đổi Gần nhất</strong>
+                    <span class="block mt-0.5 text-gray-800 dark:text-gray-300">@lastRevisedDate.Value.ToString("dd/MM/yyyy")</span>
+                </div>
+            </div>
+        }
+
+        @* Cột 8: Tác giả (Ẩn) *@
+        @if (!string.IsNullOrEmpty(author))
+        {
+            <div class="hidden"> 
+                <strong class="block text-xs font-medium text-gray-500 dark:text-gray-400">Tác giả</strong>
+                <span class="block mt-1 text-gray-800 dark:text-gray-300">@author</span>
+            </div>
+        }
+    </div>
+}

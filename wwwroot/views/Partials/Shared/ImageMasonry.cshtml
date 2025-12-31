@@ -1,0 +1,25 @@
+@using Umbraco.Cms.Core.Models.PublishedContent
+@model IEnumerable<IPublishedContent>
+
+@{
+    var keyShort = ViewData["KeyShort"]?.ToString() ?? Guid.NewGuid().ToString("N")[..8];
+}
+
+@if (Model?.Any() == true)
+{
+    <div id="gallery-@keyShort" class="columns-3 md:columns-2 sm:columns-1 gap-4 mt-4">
+        @foreach (var img in Model)
+        {
+            <div class="break-inside-avoid mb-4 overflow-hidden rounded-xl shadow-sm hover:shadow-md transition duration-300">
+                <img src="@img.Url()"
+                     alt="@img.Name ?? """
+                     loading="lazy"
+                     class="w-full h-auto object-cover hover:scale-[1.02] transition-transform duration-300" />
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p class="text-gray-400 text-sm italic">Không có hình ảnh nào để hiển thị.</p>
+}

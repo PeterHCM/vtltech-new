@@ -1,0 +1,137 @@
+@inherits UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using System.Collections.Generic
+
+@{    
+    var content = (IPublishedElement)Model.Content;
+    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
+    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
+    var blockClass = $"col-span-{columnSpan} row-span-{rowSpan}";    
+    
+    var title = content.Value<string>("title") ?? "Danh mục Tài liệu Công ty";
+    var departmentSelected = content.Value<string>("department")?.ToLowerInvariant();
+    var selectAll = content.Value<bool>("selectAll");
+    Func<string, string> GetDepartmentName = (code) =>
+    {
+        if (string.IsNullOrEmpty(code)) return "Loại khác";
+        code = code.ToUpperInvariant();
+        if (code.Contains("AG")) return "Toàn công ty";
+        if (code.Contains("AHR")) return "Hành chính & Nhân sự";
+        if (code.Contains("SAL")) return "Kinh doanh";
+        if (code.Contains("ACC")) return "Kế toán";
+        if (code.Contains("PUR")) return "Mua hàng";
+        return "Loại khác";
+    };    
+    Func<string, string> GetDocumentTypeName = (code) =>
+    {
+        if (string.IsNullOrEmpty(code)) return "Loại khác";
+        code = code.ToUpperInvariant();
+        if (code.Contains("MNL")) return "Sổ tay";
+        if (code.Contains("PLY")) return "Quy chế";
+        if (code.Contains("PCS")) return "Quy trình";
+        if (code.Contains("INS")) return "Hướng dẫn";
+        if (code.Contains("FRM")) return "Biểu mẫu";
+        if (code.Contains("LST")) return "Danh mục";
+        if (code.Contains("RPT")) return "Báo cáo";
+        return "Loại khác";
+    };
+    
+    // Khởi tạo danh sách rỗng để tránh lỗi null
+    var allCompanyDocuments = Umbraco?.ContentAtRoot()
+        ?.SelectMany(x => x.DescendantsOfType("companyDocument"))
+        ?.Where(doc => doc != null && doc.IsPublished()) // Kiểm tra null và đã xuất bản
+        ?.ToList() ?? new List<IPublishedContent>();
+
+    // 1. Lọc theo isVisible (Chỉ hiển thị các tài liệu được đánh dấu là true)
+    var filteredDocuments = allCompanyDocuments.Where(doc =>
+        !doc.Value<bool>("hideFromSearch")
+    );
+
+
+    // 2. Lọc theo Phòng ban (Chỉ áp dụng nếu "selectAll" là false)
+    if (!selectAll && !string.IsNullOrEmpty(departmentSelected))
+    {
+        filteredDocuments = filteredDocuments.Where(doc =>
+        {
+            var docDepartmentCode = doc.Value<string>("department")?.ToLowerInvariant();
+            return docDepartmentCode == departmentSelected;
+        });
+    }
+
+    // 3. Nhóm tài liệu theo Tên Phòng ban (cho hiển thị)
+    var groupedDocuments = filteredDocuments
+        // Lấy mã phòng ban an toàn (dùng ?? "" để đảm bảo không null)
+        .OrderBy(doc => doc.Value<string>("department") ?? "")
+        .GroupBy(doc => GetDepartmentName(doc.Value<string>("department")));
+}
+
+<div class="@blockClass block-grid-item p-4">
+    <h1>@title</h1>
+
+    @if (!groupedDocuments.Any())
+    {
+        <p class="text-gray-500">Không tìm thấy tài liệu nào phù hợp với tiêu chí lọc.</p>
+    }
+    else
+    {
+        @foreach (var departmentGroup in groupedDocuments)
+        {
+            <div class="mb-8 border-t pt-4">
+                <h2>
+                    @departmentGroup.Key
+                    <span class="text-sm font-normal text-gray-500">(@departmentGroup.Count() tài liệu)</span>
+                </h2>
+
+                <div class="overflow-x-auto shadow-md rounded-lg">
+                    <table class="min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th style="width: 8%" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Mã tài liệu</th>
+                                <th style="width: 33%" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tên tài liệu</th>
+                                <th style="width: 17%" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Loại</th>
+                                <th style="width: 8%" class="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Phiên bản</th>
+                                <th style="width: 17%" class="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ngày ban hành</th>
+                                <th style="width: 17%" class="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cập nhật cuối</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            @foreach (var doc in departmentGroup.OrderBy(d => d.Value<string>("documentId") ?? ""))
+                            {
+                                var docTitle = doc.Value<string>("title");
+                                var docId = doc.Value<string>("documentId");
+                                var docType = doc.Value<string>("documentType");
+                                var pubDate = doc.Value<DateTime?>("publicationDate");
+                                var revDate = doc.Value<DateTime?>("lastRevisedDate");
+
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-150">
+                                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                                        @(docId ?? "N/A")
+                                    </td>
+                                    <td class="px-4 py-2 text-sm">
+                                        <a href="@doc.Url()" class="hover:text-primary font-medium">
+                                            @(docTitle ?? "Tiêu đề trống")
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        @(GetDocumentTypeName(docType))
+                                    </td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
+                                        @(doc.Value("revision") ?? "-")
+                                    </td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
+                                        @(pubDate?.ToString("dd/MM/yyyy") ?? "-")
+                                    </td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
+                                        @(revDate?.ToString("dd/MM/yyyy") ?? "-")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>

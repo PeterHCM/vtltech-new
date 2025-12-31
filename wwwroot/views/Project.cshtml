@@ -1,0 +1,35 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
+@using Umbraco.Cms.Core.Models
+@{
+    Layout = "layout.cshtml";
+    var description = Model.Value<string>("description")?.Replace("\n", "<br />");
+    var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
+    var images = Model.Value<IEnumerable<IPublishedContent>>("image")?.ToList() ?? new List<IPublishedContent>();
+    var fallbackPartial = "Partials/blockgrid/Default";
+}
+
+@await Html.PartialAsync("Partials/Shared/banner", Model)
+
+@if (blocks?.Any() == true)
+{
+    <section class="container-main Project">
+        @if (!string.IsNullOrWhiteSpace(description))
+        {
+            <p>@Html.Raw(description)</p>
+        }
+        <div class="mt-12 mb-12">
+            @(await Html.PartialAsync($"Partials/Shared/ImageCarousel", images))
+        </div>
+        <div class="grid grid-cols-12 auto-rows-min gap-4">
+            @foreach (var block in blocks)
+            {
+                var alias = block.Content.ContentType.Alias;
+                var partialPath = $"Partials/blockgrid/{alias}";
+                var viewResult = viewEngine.FindView(ViewContext, partialPath, isMainPage: false);
+                var partialToRender = viewResult.Success ? partialPath : fallbackPartial;
+                @await Html.PartialAsync(partialToRender, block)
+            }
+        </div>
+    </section>
+}

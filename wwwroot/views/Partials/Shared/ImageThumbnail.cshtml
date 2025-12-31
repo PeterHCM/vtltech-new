@@ -1,0 +1,74 @@
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.PublishedContent
+@model IEnumerable<IPublishedContent>
+
+@{
+    var keyShort = ViewData["KeyShort"]?.ToString() ?? Guid.NewGuid().ToString("N")[..8];
+    var mainImage = Model?.FirstOrDefault();
+    var mainImageKey = $"main-image-{keyShort}";
+}
+
+@if (Model?.Any() == true)
+{
+    <div class="space-y-4">
+        <!-- 1. Hình lớn -->
+        @if (mainImage != null)
+        {
+            <div class="aspect-video overflow-hidden rounded-lg relative">
+                <img id="@mainImageKey"
+                     src="@mainImage.Url()"
+                     alt="@mainImage.Name"
+                     class="w-full h-full object-cover transition-opacity duration-300"
+                     loading="lazy" />
+            </div>
+        }
+
+        <!-- 2. Lưới ảnh nhỏ -->
+        <div id="thumbnail-@keyShort" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+            @foreach (var (img, index) in Model.Select((item, i) => (item, i)))
+            {
+                var isActive = index == 0 ? "border-primary" : "border-transparent";
+                <div class="aspect-square overflow-hidden rounded-lg group relative cursor-pointer border-2 thumbnail-item @isActive"
+                     data-image-url="@img.Url()"
+                     aria-label="View @img.Name">
+                    <img src="@img.Url()" alt="@img.Name"
+                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110"
+                         loading="lazy" />
+                </div>
+            }
+        </div>
+
+        <!-- 3. JavaScript -->
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const key = "@keyShort";
+                const mainImage = document.getElementById("main-image-" + key);
+                const thumbnails = document.querySelectorAll(`#thumbnail-${key} .thumbnail-item`);
+                if (!mainImage || thumbnails.length === 0) return;
+
+                let activeThumb = thumbnails[0];
+
+                thumbnails.forEach(thumb => {
+                    thumb.addEventListener('click', () => {
+                        const newUrl = thumb.dataset.imageUrl;
+                        mainImage.style.opacity = '0';
+                        setTimeout(() => {
+                            mainImage.src = newUrl;
+                            mainImage.style.opacity = '1';
+                        }, 100);
+
+                        activeThumb?.classList.remove('border-primary');
+                        activeThumb?.classList.add('border-transparent');
+                        thumb.classList.add('border-primary');
+                        thumb.classList.remove('border-transparent');
+                        activeThumb = thumb;
+                    });
+                });
+            });
+        </script>
+    </div>
+}
+else
+{
+    <p class="text-red-400 dark:text-red-300 opacity-50">Không có ảnh nào được chọn cho layout Thumbnail Gallery.</p>
+}

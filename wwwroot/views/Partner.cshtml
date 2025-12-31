@@ -1,0 +1,36 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
+@{
+    Layout = "layout.cshtml";
+
+    var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
+    var fallbackPartial = "Partials/blockgrid/Default";
+
+    var originalIconUrl = Model.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url();
+    var iconUrl = !string.IsNullOrEmpty(originalIconUrl)
+        ? (originalIconUrl.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+            ? originalIconUrl
+            : $"{originalIconUrl}?width=400&quality=80&format=webp")
+        : "/media/default/VTL_logo.svg";
+}
+
+@await Html.PartialAsync("Partials/Shared/banner", Model)
+
+<section class="container-main partner">
+    <div class="flex justify-center items-center mt-8">
+        <img src="@iconUrl" alt="Logo nhà sản xuất MTL, Eaton và Weidmuller" class="h-16 w-auto">
+    </div>
+    <div class="grid grid-cols-12 auto-rows-min gap-4">
+        @if (blocks?.Any() == true)
+        {
+            @foreach (var block in blocks)
+            {
+                var alias = block.Content.ContentType.Alias;
+                var partialPath = $"Partials/blockgrid/{alias}";
+                var viewResult = viewEngine.FindView(ViewContext, partialPath, isMainPage: false);
+                var partialToRender = viewResult.Success ? partialPath : fallbackPartial;
+                @await Html.PartialAsync(partialToRender, block)
+            }
+        }        
+    </div>
+</section>

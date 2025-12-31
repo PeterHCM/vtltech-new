@@ -1,0 +1,30 @@
+@inherits UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+
+@{
+    var content = Model.Content;
+    var settings = Model.Settings;
+    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
+    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
+    var blockClass = $"col-span-{columnSpan} row-span-{rowSpan}"; // Tailwind class
+    var title = content.Value<string>("title");
+    var description = content.Value<string>("description");
+    var code = content.Value<string>("code");
+}
+<div class="block-wrapper @blockClass">
+    @if (!string.IsNullOrWhiteSpace(title))
+    {
+        <h2>@title</h2>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(description))
+    {
+        <p>@description</p>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(code))
+    {
+        @Html.Raw(code)
+    }
+</div>

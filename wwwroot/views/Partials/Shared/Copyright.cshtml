@@ -1,0 +1,15 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@{
+    var copyrightText = Umbraco
+        .ContentAtRoot()
+        .FirstOrDefault(x => x.ContentType.Alias == "companySettings")
+        ?.Value<string>("copyright")
+        ?? "© 2025 Viet Thang Loi Technology Company Limited";
+}
+<footer class="bg-gray-900 dark:bg-gray-950"> 
+    <div class="container print:hidden max-w-7xl mx-auto px-6 py-8 border-t border-gray-700 text-center text-xs text-gray-400 dark:text-gray-500">
+        <p class="text-white">@copyrightText</p>
+    </div>
+</footer>

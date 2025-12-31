@@ -1,0 +1,47 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
+
+@{
+    Layout = "layout.cshtml";
+    var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
+    var fallbackPartial = "Partials/blockgrid/Default";
+    var title = Model.HasValue("title") 
+        ? Model.Value<string>("title") 
+        : Model.Name;
+    var description = (Model.Value<string>("description")?? "").Replace("\n", "<br />");
+    var originalImageUrl = Model.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
+    var imageUrl = !string.IsNullOrEmpty(originalImageUrl)
+        ? (originalImageUrl.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+            ? originalImageUrl
+            : $"{originalImageUrl}?width=800&quality=90&format=webp")
+        : "/media/default/VTL_logo.svg";
+}
+
+@await Html.PartialAsync("Partials/Shared/banner", Model)
+<section class="container-main Product">
+    @if (!string.IsNullOrWhiteSpace(title))
+    {
+        <h3>@title</h3>
+    }
+    @if (!string.IsNullOrWhiteSpace(description))
+    {
+        <p class="mb-6">@Html.Raw(description)</p>
+    }
+    <div class="w-full flex justify-center mt-8">
+        <img src="@imageUrl" alt="@title" class="max-w-full h-auto object-cover rounded-lg shadow-xl" />
+    </div>
+    @if (blocks?.Any() == true)
+    {
+        
+        <div class="grid grid-cols-12 auto-rows-min gap-4">
+            @foreach (var block in blocks)
+            {
+                var alias = block.Content.ContentType.Alias;
+                var partialPath = $"Partials/blockgrid/{alias}";
+                var viewResult = viewEngine.FindView(ViewContext, partialPath, isMainPage: false);
+                var partialToRender = viewResult.Success ? partialPath : fallbackPartial;
+                @await Html.PartialAsync(partialToRender, block)
+            }
+        </div>
+    }
+</section>

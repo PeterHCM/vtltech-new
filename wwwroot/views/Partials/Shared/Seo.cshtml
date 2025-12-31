@@ -1,0 +1,232 @@
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using Umbraco.Cms.Web.Common.PublishedModels
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using System.Globalization
+@using System.Collections.Generic
+@using System.Linq
+@{
+    var currentPage = Model;
+    var settings = Umbraco.ContentAtRoot()
+        .FirstOrDefault(x => x.ContentType.Alias == "companySettings");
+
+    // -------------------------------
+    // 1️⃣ THÔNG TIN CÔNG TY & MẶC ĐỊNH
+    // -------------------------------
+    var companyName = settings?.Value<string>("companyName") 
+        ?? "Viet Thang Loi Technology Company Limited";
+
+    var defaultMetaDescription = settings?.Value<string>("defaultMetaDescription") 
+        ?? "Việt Thắng Lợi – đại diện chính thức Eaton Crouse-Hinds, Eaton MTL Instruments, Weidmüller, Lytech tại Việt Nam; đối tác Azbil, ABB, Honeywell, Emerson, Riello UPS & Liquid Controls.";
+
+    var defaultLogoMedia = settings?.Value<IEnumerable<IPublishedContent>>("websiteLogoDark")?.FirstOrDefault() 
+        ?? settings?.Value<IEnumerable<IPublishedContent>>("websiteLogoLight")?.FirstOrDefault();
+
+    var defaultLogoUrl = defaultLogoMedia?.Url(mode: UrlMode.Absolute);
+
+    var facebook = settings?.Value<IEnumerable<Link>>("facebookUrl")?.FirstOrDefault()?.Url;
+    var youtube = settings?.Value<IEnumerable<Link>>("youtubeUrl")?.FirstOrDefault()?.Url;
+    var zalo = settings?.Value<IEnumerable<Link>>("zaloUrl")?.FirstOrDefault()?.Url;
+    var messenger = settings?.Value<IEnumerable<Link>>("messengerUrl")?.FirstOrDefault()?.Url;
+
+    // -------------------------------
+    // 2️⃣ METADATA CƠ BẢN
+    // -------------------------------
+    var metaTitle = currentPage.HasValue("metaTitle")
+        ? currentPage.Value<string>("metaTitle")
+        : currentPage.Name;
+
+    var pageTitleOutput = $"{metaTitle} | {companyName}";
+    var metaDescription = currentPage.HasValue("metaDescription")
+        ? currentPage.Value<string>("metaDescription")
+        : defaultMetaDescription;
+    var defaultKeywords = new List<string>
+    {
+        "MTL Chống sét lan truyền",
+        "MTL Safety Barrier",
+        "Eaton Explosion Proof",
+        "Weidmuller Surge Protection",
+        "Riello UPS",
+        "Vietnam Industrial Electrical Solutions"
+    };
+    var metaKeywords = currentPage.Value("metaKeywords") as IEnumerable<string>;
+    var finalKeywords = metaKeywords != null && metaKeywords.Any()
+        ? metaKeywords
+        : defaultKeywords;
+    var seoRobots = currentPage.HasValue("seoRobots")
+        ? currentPage.Value<string>("seoRobots")
+        : "index, follow";
+    var canonicalUrl = currentPage.Url(mode: UrlMode.Absolute);
+
+    // -------------------------------
+    // 3️⃣ OPEN GRAPH
+    // -------------------------------
+    var ogImage = currentPage.Value<IPublishedContent>("ogImage")?.Url(mode: UrlMode.Absolute) ?? defaultLogoUrl;
+    var alias = currentPage.ContentType.Alias.ToLowerInvariant();
+
+    var ogType = alias switch
+    {
+        "articlepage" => "article",
+        "product" => "product",
+        "aboutus" => "profile",
+        "documentation" => "book",
+        "homepage" => "website",
+        _ => "website"
+    };
+
+    var ogSiteName = settings?.Value<string>("websiteName") ?? companyName;
+
+    // -------------------------------
+    // 4️⃣ Article / Product Data
+    // -------------------------------
+    var publishedDate = currentPage.Value<DateTime?>("publishDate") ?? currentPage.CreateDate;
+    var modifiedDate = currentPage.UpdateDate;
+    var mainImage = ogImage ?? defaultLogoUrl;
+    var productPrice = currentPage.HasValue("price") ? currentPage.Value<decimal>("price") : 0;
+    var productCurrency = "VND";
+}
+<!-- =========================== -->
+<!-- 🌐 SEO CƠ BẢN -->
+<!-- =========================== -->
+<title>@pageTitleOutput</title>
+<meta name="description" content="@metaDescription" />
+<meta name="keywords" content="@string.Join(", ", finalKeywords)" />
+<meta name="robots" content="@seoRobots" />
+<link rel="canonical" href="@canonicalUrl" />
+
+<!-- =========================== -->
+<!-- 🔗 OPEN GRAPH -->
+<!-- =========================== -->
+<meta property="og:title" content="@metaTitle" />
+<meta property="og:description" content="@metaDescription" />
+<meta property="og:url" content="@canonicalUrl" />
+<meta property="og:type" content="@ogType" />
+<meta property="og:site_name" content="@ogSiteName" />
+@if (!string.IsNullOrEmpty(ogImage))
+{
+    <meta property="og:image" content="@ogImage" />
+    <meta property="og:image:alt" content="@metaTitle" />
+}
+@if (alias == "articlepage")
+{
+    <meta property="article:published_time" content="@publishedDate.ToString("yyyy-MM-ddTHH:mm:sszzz")" />
+    <meta property="article:modified_time" content="@modifiedDate.ToString("yyyy-MM-ddTHH:mm:sszzz")" />
+}
+
+<!-- =========================== -->
+<!-- 🐦 TWITTER CARD -->
+<!-- =========================== -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="@metaTitle" />
+<meta name="twitter:description" content="@metaDescription" />
+@if (!string.IsNullOrEmpty(ogImage))
+{
+    <meta name="twitter:image" content="@ogImage" />
+}
+
+<!-- =========================== -->
+<!-- 📊 STRUCTURED DATA (SCHEMA) -->
+<!-- =========================== -->
+
+@* ---- ORGANIZATION SCHEMA ---- *@
+@if (settings != null)
+{
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "Organization",
+    "name": "@companyName",
+    "url": "@settings.Url(mode: UrlMode.Absolute)",
+    "logo": "@defaultLogoUrl",
+    "sameAs": [
+        "@facebook",
+        "@messenger",
+        "@zalo",
+        "@youtube"
+    ]
+}
+</script>
+}
+
+@* ---- ARTICLE SCHEMA ---- *@
+@if (alias == "articlepage")
+{
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "Article",
+    "headline": "@metaTitle",
+    "description": "@metaDescription",
+    "image": "@mainImage",
+    "author": {
+        "@@type": "Organization",
+        "name": "@companyName"
+    },
+    "publisher": {
+        "@@type": "Organization",
+        "name": "@companyName",
+        "logo": {
+            "@@type": "ImageObject",
+            "url": "@defaultLogoUrl"
+        }
+    },
+    "datePublished": "@publishedDate.ToString("yyyy-MM-ddTHH:mm:sszzz")",
+    "dateModified": "@modifiedDate.ToString("yyyy-MM-ddTHH:mm:sszzz")",
+    "mainEntityOfPage": {
+        "@@type": "WebPage",
+        "@@id": "@canonicalUrl"
+    }
+}
+</script>
+}
+
+@* ---- PRODUCT SCHEMA ---- *@
+@if (alias == "product")
+{
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "Product",
+    "name": "@metaTitle",
+    "image": "@mainImage",
+    "description": "@metaDescription",
+    "brand": {
+        "@@type": "Organization",
+        "name": "@companyName"
+    },
+    "offers": {
+        "@@type": "Offer",
+        "url": "@canonicalUrl",
+        "priceCurrency": "@productCurrency",
+        "price": "@productPrice",
+        "availability": "https://schema.org/InStock"
+    }
+}
+</script>
+}
+
+@* ---- BREADCRUMB SCHEMA ---- *@
+@if (currentPage.Ancestors().Any())
+{
+    var breadcrumbs = currentPage.Ancestors().Reverse().Append(currentPage).ToList();
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "BreadcrumbList",
+    "itemListElement": [
+        @for (int i = 0; i < breadcrumbs.Count; i++)
+        {
+            var item = breadcrumbs[i];
+            var isLast = i == breadcrumbs.Count - 1;
+<text>{
+    "@@type": "ListItem",
+    "position": @(i + 1),
+    "name": "@item.Name",
+    "item": "@item.Url(mode: UrlMode.Absolute)"
+}@((!isLast) ? "," : "")</text>
+        }
+    ]
+}
+</script>
+}
