@@ -1,0 +1,77 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using System.Globalization
+@{
+    Layout = "layout.cshtml";
+    var settings = Umbraco.ContentAtRoot()
+                    .FirstOrDefault(x => x.ContentType.Alias == "companySettings");
+    var title = Model.Value<string>("title") ?? "Liên hệ với chúng tôi";
+    var contactInfo = Model.Value<string>("contactInfo") ?? "Thông tin liên hệ";
+    var description = Model.Value<string>("description") ?? "Chúng tôi luôn sẵn sàng hỗ trợ bạn. Vui lòng liên hệ qua các kênh bên dưới.";
+    var workingHours = Model.Value<string>("workingHours") ?? "Thứ 2 – Thứ 6: 8h00 – 17h00";
+    var mapEmbed = Model.Value<string>("mapEmbed") ?? "<!-- Bản đồ chưa được cấu hình -->";
+    var mapTitle = Model.Value<string>("mapTitle") ?? "Bản đồ";
+    var qrTitle = Model.Value<string>("qrTitle") ?? "Quét QR Code liên hệ";
+    var companyName = settings?.Value<string>("companyName") ?? "Công ty TNHH Kỹ Thuật Việt Thắng Lợi";
+    var address = settings?.Value<string>("companyAddress") ?? "19A Cộng Hòa, Phường Bảy Hiền, Thành phố Hồ Chí Minh";
+    var email = settings?.Value<string>("companyEmail") ?? "info@vtltech.com.vn";
+    var phone = settings?.Value<string>("companyNumber") ?? "(028) 3811 0510";
+    var qrContent = Model.Value<IEnumerable<IPublishedContent>>("qrCode")?.FirstOrDefault()?.Url();
+    bool isSvg(string url) => url?.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ?? false;
+    var qrCodeUrl = qrContent != null 
+        ? (isSvg(qrContent) ? qrContent : $"{qrContent}?width=400&quality=80&format=webp") 
+        : "/media/default/VTL_logo.svg";
+    var zaloLink = settings?.Value<IEnumerable<Link>>("zaloUrl")?.FirstOrDefault()?.Url ?? "#";
+    var zaloQrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={zaloLink}";
+} 
+<section class="max-w-5xl mx-auto px-4 py-12">
+    <h1 class="text-3xl font-bold mb-6">@title</h1>
+    <div class="mb-10">@Html.Raw(description)</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div class="shadow rounded-lg p-6 border border-gray-100">
+            <h2 class="text-xl font-semibold mb-4">@contactInfo</h2>
+            <p class="font-bold text-lg mb-1">@companyName</p>
+            <p class="mb-4">@address</p>
+            <div class="flex items-center gap-3 mt-3">
+                <svg class="w-5 h-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.518 4.554a1 1 0 01-.27 1.031l-1.908 1.908a16.001 16.001 0 006.586 6.586l1.908-1.908a1 1 0 011.031-.27l4.554 1.518a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.163 21 3 14.837 3 7V5z" />
+                </svg>
+                <a href="tel:@phone">@phone</a>
+            </div>
+            <div class="flex items-center gap-3 mt-3">
+                <svg class="w-5 h-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 8l9 6 9-6M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" />
+                </svg>
+                <a href="mailto:@email">@email</a>
+            </div>
+            <div class="flex items-center gap-3 mt-3">
+                <svg class="w-5 h-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>@workingHours</span>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-4">
+                <div class="text-center">
+                    <p class="font-medium mb-2">@qrTitle</p>
+                    <img src="@qrCodeUrl" alt="QR Code vCard" class="w-32 h-32 object-contain border rounded mx-auto" />
+                </div>
+                <div class="text-center">                    
+                    <p class="font-medium mb-2">Zalo QR</p>
+                    <a href="@zaloLink">
+                        <img src="@zaloQrUrl" alt="Zalo QR Code" class="w-32 h-32 object-contain border rounded mx-auto" />
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="shadow rounded-lg p-6 border border-gray-100">
+            <h2 class="text-xl font-semibold mb-4">@mapTitle</h2>
+            <div class="aspect-video rounded-lg overflow-hidden shadow">
+                @Html.Raw(mapEmbed)
+            </div>
+        </div>
+    </div>
+</section>

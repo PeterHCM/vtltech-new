@@ -157,13 +157,21 @@
 /* ---------------------------------------------------------------------------------- */
 /* --- CUSTOM PRINT STYLES (Chỉ In Nội Dung Cụ Thể) --- */
 /* ---------------------------------------------------------------------------------- */
+/* 1. ĐẶT LỀ CHO GIẤY (NGOÀI CÙNG) */
 @page {
     /* Lề giấy (top right bottom left): 0.5in 0.5in 0.5in 1in */
     margin: 0.5in 0.5in 0.5in 1in; 
     size: A4 portrait;
 }
+
 @media print {
-    /* BƯỚC 1: Ẩn toàn bộ nội dung */
+    /* BƯỚC 1A: LOẠI BỎ MARGIN/PADDING MẶC ĐỊNH CỦA BODY */
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* BƯỚC 1B: Ẩn toàn bộ nội dung */
     body * {
         visibility: hidden !important;
     }
@@ -173,25 +181,30 @@
     .print-only-content * {
         visibility: visible !important;
         
-        /* ĐẢM BẢO CHỮ LÀ MÀU ĐEN VÀ NỀN TRẮNG */
+        /* Đảm bảo chữ là màu đen và nền trắng */
         color: black !important;
         background-color: white !important;
         text-shadow: none !important;
     }
 
-    /* BƯỚC 3: Tối ưu hóa Layout: Bỏ vị trí tuyệt đối và Margin/Padding */
+    /* BƯỚC 3: Tối ưu hóa Layout: Kéo nội dung lên trên và áp dụng lề */
     .print-only-content {
-        /* Bỏ position/left/top để tôn trọng lề đã đặt trong @page */
-        position: static !important;
-        float: none !important; /* Loại bỏ float nếu có */
+        /* QUAY LẠI SỬ DỤNG VỊ TRÍ TUYỆT ĐỐI */
+        /* Mục đích: Đảm bảo nội dung BẮT ĐẦU từ góc trên/trái của khu vực in */
+        position: absolute !important; 
+        left: 0 !important;
+        top: 0 !important;
         
-        /* Đảm bảo không có margin hay padding nội bộ */
+        /* Đặt padding/margin = 0 để @page kiểm soát lề */
         margin: 0 !important;
         padding: 0 !important; 
         width: 100% !important;
+        
+        /* Các thiết lập cũ, chỉ giữ lại nếu cần cho bố cục in */
+        float: none !important; 
     }
     
-    /* Ghi đè màu đen cho các thành phần đặc biệt (headings, links, strong) */
+    /* Ghi đè màu đen cho các thành phần đặc biệt */
     .print-only-content h1,
     .print-only-content h2,
     .print-only-content h3,
@@ -201,12 +214,10 @@
         color: black !important;
     }
 
-    /* Loại bỏ gạch chân của link (nếu cần) hoặc đặt lại */
+    /* Tối ưu hóa các hiệu ứng không cần thiết */
     .print-only-content a {
-        text-decoration: underline !important; /* Thêm gạch chân cho link khi in */
+        text-decoration: underline !important;
     }
-
-    /* Loại bỏ các box-shadow và border-color đậm */
     .print-only-content * {
         box-shadow: none !important;
         border-color: #ccc !important; 

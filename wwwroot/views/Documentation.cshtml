@@ -1,0 +1,93 @@
+@using Umbraco.Cms.Web.Common.PublishedModels
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models
+@{
+    Layout = "layout.cshtml";
+
+    // Thông tin cơ bản
+    var title = Model.Value<string>("title");
+    var description = (Model.Value<string>("description") ?? "").Replace("\n", "<br />");
+    var manufacturer = Model.Value<string>("manufacturer");
+    var publishDate = Model.UpdateDate;
+
+    // Link download
+    var documentUrl = Model.Value<IEnumerable<Link>>("Link")?.FirstOrDefault()?.Url ?? "#";
+    var downloadText = Umbraco?.GetDictionaryValue("Download") ?? "Xem / Download";
+
+    // Danh mục
+    var categories = Model.Value<IEnumerable<string>>("category");
+
+    // Hình ảnh & icon
+    string GetImageUrl(IEnumerable<IPublishedContent> images, int width = 400)
+    {
+        var imgUrl = images?.FirstOrDefault()?.Url();
+        if (string.IsNullOrWhiteSpace(imgUrl)) return "/media/default/VTL_logo.svg";
+        return imgUrl.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+            ? imgUrl
+            : $"{imgUrl}?width={width}&quality=80&format=webp";
+    }
+
+    var imageUrl = GetImageUrl(Model.Value<IEnumerable<IPublishedContent>>("image"));
+    var iconUrl = GetImageUrl(Model.Value<IEnumerable<IPublishedContent>>("icon"));
+}
+
+@await Html.PartialAsync("Partials/Shared/banner", Model)
+
+<div class="container-main block-wrapper">
+    <!-- Header: icon + title + date -->
+    <div class="flex items-center gap-4 mb-6">
+        <img src="@iconUrl" alt="Icon" class="w-12 h-12 object-contain" />
+        <div>
+            <h3>@title</h3>
+            <p class="text-sm text-gray-400 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                @publishDate.ToString("dd/MM/yyyy")
+            </p>
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="mb-6">
+        <p>@Html.Raw(description)</p>
+    </div>
+
+    <!-- Manufacturer & Categories -->
+    <div class="mb-6">
+        @if (!string.IsNullOrWhiteSpace(manufacturer))
+        {
+            <div class="flex items-center gap-2 mt-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10v11h18V10l-6-4v4h-6V6l-6 4z" />
+                </svg>
+                <span>@manufacturer</span>
+            </div>
+        }
+
+        @if (categories?.Any() == true)
+        {
+            <div class="flex items-center gap-2 mt-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 11h10M7 15h10" />
+                </svg>
+                <div class="mt-1 flex flex-wrap">
+                    @foreach (var cat in categories)
+                    {
+                        <span class="inline-block bg-gray-700 text-sm rounded-full mr-2 px-2 py-1">@cat</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Download Button -->
+    <div class="mt-8">
+        <a href="@documentUrl" class="btn-outline text-primary gap-3 inline-flex items-center">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+            </svg>
+            @downloadText
+        </a>
+    </div>
+</div>
