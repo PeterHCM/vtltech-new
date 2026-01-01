@@ -1,234 +1,122 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
 @using Umbraco.Extensions
-@using Umbraco.Cms.Core.Models.PublishedContent
-@using System.Linq
 @{
     var content = Model.Content;
     var title = content.Value<string>("title");
     var subTitle = content.Value<string>("subTitle");
     var description = content.Value<string>("description");
-    var layout = content.Value<string>("layout")?.ToLowerInvariant() ?? "4";    
+    var layout = content.Value<string>("layout")?.ToLowerInvariant() ?? "4";
+    
+    // Gom nhóm logic hiển thị
+    bool isCarousel = layout == "0";
+    var items = content.Value<IEnumerable<IPublishedContent>>("links") ?? Enumerable.Empty<IPublishedContent>();
     var hideClass = layout == "6" ? "hidden" : "";
     var textClass = layout == "6" ? "text-xs sm:text-sm" : "";
     var titleClass = layout == "6" ? "text-sm sm:text-base" : "text-base sm:text-lg";
-    var items = content.Value<IEnumerable<IPublishedContent>>("links");
-    var colSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
-    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
-    var blockClass = $"col-span-12 row-span-12 sm:col-span-{colSpan} sm:row-span-{rowSpan}";
-    var gridClass = layout switch
-    {
-        "1" => "grid-cols-1",  // 1 cột
-        "3" => "grid-cols-3",  // 3 cột
-        "4" => "grid-cols-4",  // 4 cột
-        "6" => "grid-cols-6",  // 2 cột
-        "0" => "grid-cols-4",  // 4 cột khi layout == 0
-        _ => "grid-cols-3",    // Mặc định: 3 cột cho các layout khác
+    // Class động
+    var blockClass = $"col-span-12 row-span-12 sm:col-span-{Model.ColumnSpan} sm:row-span-{Model.RowSpan}";
+    var gridClass = layout switch {
+        "1" => "grid-cols-1 gap-8",
+        "3" => "grid-cols-3 gap-4",
+        "4" => "grid-cols-4 gap-4",
+        "6" => "grid-cols-6 gap-2",
+        _ => "grid-cols-4 gap-4"
     };
+
+    var carouselId = isCarousel ? $"carousel-{Guid.NewGuid():N}" : null;
 }
-
-@if (layout == "0")
-{
-    var carouselId = $"carousel-{Guid.NewGuid().ToString("N")}";
-
-<div class="@blockClass" id="@carouselId">
+<div class="@blockClass @(isCarousel ? "carousel-root" : "")" id="@carouselId">
     <div class="block-wrapper">
-        @if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(description))
+        @if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(subTitle) || !string.IsNullOrWhiteSpace(description))
         {
-            <div class="block-header" style="margin-bottom:1rem">
-                @if (!string.IsNullOrWhiteSpace(title)) { <h2 style="text-align:center">@title</h2> }
-                @if (!string.IsNullOrWhiteSpace(subTitle)) { <h4 class="text-secondary" style="text-align:center">@subTitle</h4> }
-                @if (!string.IsNullOrWhiteSpace(description)) { <p>@description</p> }
+            <div class="block-header mb-6 text-center">
+                @if (!string.IsNullOrWhiteSpace(title)) { <h2 class="font-bold text-2xl">@title</h2> }
+                @if (!string.IsNullOrWhiteSpace(subTitle)) { <h4 class="text-secondary opacity-75">@subTitle</h4> }
+                @if (!string.IsNullOrWhiteSpace(description)) { <p class="mt-2">@description</p> }
             </div>
         }
 
         @if (items.Any())
         {
-            <div class="carousel-container" style="position:relative; overflow:hidden;">
-                <div class="carousel-viewport" style="overflow:hidden; width:100%;">
-                    <div class="carousel-track" style="display:flex; gap:16px; will-change:transform; transition:transform 0.5s ease;">
+            <div class="@(isCarousel ? "carousel-container relative overflow-hidden" : "")">
+                <div class="@(isCarousel ? "carousel-viewport overflow-hidden" : $"grid {gridClass} py-4")">
+                    <div class="@(isCarousel ? "carousel-track flex transition-transform duration-500 ease-out" : "contents")"
+                        style="@(isCarousel ? "display:flex; gap:16px; will-change:transform; transition:transform 0.5s ease;" : "")">
+                        
                         @foreach (var item in items)
                         {
                             var itemTitle = item.Name;
                             var itemDesc = item.Value<string>("description");
-                            var image = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
-                            var icon = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url();
-
-                            var isSvg = image?.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ?? false;
-                            var imageUrl = !string.IsNullOrEmpty(image)
-                                ? (isSvg ? image : $"{image}?width=400&quality=80&format=webp")
-                                : "/media/default/VTL_logo.svg";
-                            var iconUrl = !string.IsNullOrEmpty(icon) ? icon : "/media/default/VTL_logo.svg";
-
-                            <div class="carousel-slide" style="flex:0 0 calc((100% - 3*16px)/4);">
-                                <div class="card" style="display:flex; flex-direction:column; height:100%;">
-                                    <a href="@item.Url()" style="display:block; text-decoration:none;">
-                                        <div class="card-image" style="position:relative;">
-                                            <img src="@imageUrl" alt="@itemTitle" style="width:100%; height:auto;" loading="lazy" />
+                            var img = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault();
+                            var icon = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault();
+                            
+                            var imageUrl = img?.Url() ?? "/media/default/VTL_logo.svg";
+                            if (img != null && !imageUrl.EndsWith(".svg")) imageUrl += "?width=400&format=webp";
+                            
+                            var iconUrl = icon?.Url() ?? "/media/default/VTL_logo.svg";
+                            <div class="@(isCarousel ? "carousel-slide" : "card group")" 
+                                 style="@(isCarousel ? "flex:0 0 calc((100% - 3*16px)/4);" : "")">
+                                <a href="@item.Url()" class="card block h-full border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                                    <div class="relative aspect-video overflow-hidden bg-gray-100">
+                                        <img src="@imageUrl" alt="@itemTitle" class="card-image" loading="lazy" />
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            @if (layout != "6") { <img src="@iconUrl" class="w-5 h-5 object-contain" alt="icon" /> }
+                                            <h3 class="font-semibold line-clamp-2 @titleClass">@itemTitle</h3>
                                         </div>
-                                        <div class="card-body" style="display:flex; flex-direction:column; justify-content:space-between;">
-                                            <div style="display:flex; align-items:center; gap:8px;">
-                                                <img src="@iconUrl" alt="Icon @itemTitle" style="width:24px; height:24px; object-fit:contain;" loading="lazy" />
-                                                <h3 class="@titleClass line-clamp-2">@itemTitle</h3>
-                                            </div>
-                                            @if (!string.IsNullOrWhiteSpace(itemDesc))
-                                            {
-                                                <p class="@textClass line-clamp-3" title="@itemDesc">@itemDesc</p>
-                                            }
-                                        </div>
-                                    </a>
-                                </div>
+                                        @if (!string.IsNullOrWhiteSpace(itemDesc)) {
+                                            <p class="text-sm line-clamp-3 opacity-80" title="@itemDesc">@itemDesc</p>
+                                        }
+                                    </div>
+                                </a>
                             </div>
                         }
                     </div>
                 </div>
 
-                <button class="carousel-prev absolute left-0 top-1/2 -translate-y-1/2 
-                                   p-2 border-none cursor-pointer">
-                    <!-- Heroicon: Chevron Left -->
-                    <svg xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor" 
-                        class="w-6 h-6 text-gray-800 dark:text-gray-200">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-
-                <button class="carousel-next absolute right-0 top-1/2 -translate-y-1/2 
-                            p-2 border-none cursor-pointer">
-                    <!-- Heroicon: Chevron Right -->
-                    <svg xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor" 
-                        class="w-6 h-6 text-gray-800 dark:text-gray-200">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
-            </div>
-        }
-    </div>
-</div>
-
-<script>
-(function(){
-    const root = document.getElementById("@carouselId");
-    if (!root) return;
-
-    const track = root.querySelector(".carousel-track");
-    const prevBtn = root.querySelector(".carousel-prev");
-    const nextBtn = root.querySelector(".carousel-next");
-    const slides = Array.from(root.querySelectorAll(".carousel-slide"));
-
-    const cardsPerView = 4;
-    const gapPx = 16; // Khớp với gap trong inline style
-    let index = 0;
-
-    function slidesPerViewCurrent() {
-        // Responsive cơ bản (tuỳ chỉnh nếu cần)
-        const w = root.clientWidth;
-        if (w < 640) return 1;
-        if (w < 1024) return 2;
-        return cardsPerView;
-    }
-
-    function slideWidth() {
-        // Width của 1 slide dựa trên viewport thực
-        const viewport = root.querySelector(".carousel-viewport");
-        const spv = slidesPerViewCurrent();
-        const totalGap = gapPx * (spv - 1);
-        return (viewport.clientWidth - totalGap) / spv;
-    }
-
-    function clampIndex() {
-        const spv = slidesPerViewCurrent();
-        const maxIndex = Math.max(0, slides.length - spv);
-        if (index > maxIndex) index = maxIndex;
-        if (index < 0) index = 0;
-    }
-
-    function update() {
-        clampIndex();
-        const x = index * (slideWidth() + gapPx);
-        track.style.transform = `translateX(-${x}px)`;
-        // Ẩn/disable nút khi không cần
-        const spv = slidesPerViewCurrent();
-        const maxIndex = Math.max(0, slides.length - spv);
-        prevBtn.disabled = (index === 0);
-        nextBtn.disabled = (index === maxIndex);
-        prevBtn.style.opacity = prevBtn.disabled ? 0.5 : 1;
-        nextBtn.style.opacity = nextBtn.disabled ? 0.5 : 1;
-    }
-
-    function onNext() { index++; update(); }
-    function onPrev() { index--; update(); }
-
-    nextBtn.addEventListener("click", onNext);
-    prevBtn.addEventListener("click", onPrev);
-    window.addEventListener("resize", update);
-
-    // Nếu items < cardsPerView, ẩn nút
-    if (slides.length <= cardsPerView) {
-        prevBtn.style.display = "none";
-        nextBtn.style.display = "none";
-    }
-
-    // Khởi tạo
-    update();
-})();
-</script>
-
-}
-else
-{
-<div class="@blockClass">
-    <div class="block-wrapper">
-        @if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(description))
-        {
-            <div class="block-header mb-4">
-                @if (!string.IsNullOrWhiteSpace(title)) { <h2 class="text-center">@title</h2> }
-                @if (!string.IsNullOrWhiteSpace(subTitle)) { <h4 class="text-secondary text-center">@subTitle</h4> }
-                @if (!string.IsNullOrWhiteSpace(description)) { <p>@description</p> }
-            </div>
-        }
-
-        @if (items.Any())
-        {
-            <div class="@($"grid {gridClass} gap-6 py-8")">
-                @foreach (var item in items)
+                @if (isCarousel)
                 {
-                    var itemTitle = item.Name;
-                    var itemDesc = item.Value<string>("description");
-                    var image = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
-                    var icon = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url();
-
-                    var isSvg = image?.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ?? false;
-                    var imageUrl = !string.IsNullOrEmpty(image)
-                        ? (isSvg ? image : $"{image}?width=400&quality=80&format=webp")
-                        : "/media/default/VTL_logo.svg";
-                    var iconUrl = !string.IsNullOrEmpty(icon) ? icon : "/media/default/VTL_logo.svg";
-
-                    <div class="card group flex flex-col justify-between">
-                        <a href="@item.Url()" class="block h-full">
-                            <div class="card-image relative">
-                                <img src="@imageUrl" alt="@itemTitle" class="card-image" loading="lazy" />
-                                <div class="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            </div>
-
-                            <div class="card-body flex flex-col justify-between">
-                                <div class="flex items-center gap-2">
-                                    <img src="@iconUrl" alt="Icon @itemTitle" class="w-6 h-6 object-contain @hideClass" loading="lazy" />
-                                    <h3 class="text-base sm:text-lg font-semibold text-primary dark:text-white line-clamp-2 @titleClass">@itemTitle</h3>
-                                </div>
-
-                                @if (!string.IsNullOrWhiteSpace(itemDesc))
-                                {
-                                    <p class="line-clamp-3 @textClass" title="@itemDesc">@itemDesc</p>
-                                }
-                            </div>
-                        </a>
-                    </div>
+                    <button class="carousel-prev absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button class="carousel-next absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
                 }
             </div>
         }
     </div>
 </div>
+@if (isCarousel)
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const root = document.getElementById("@carouselId");
+            const track = root.querySelector(".carousel-track");
+            const slides = root.querySelectorAll(".carousel-slide");
+            const next = root.querySelector(".carousel-next");
+            const prev = root.querySelector(".carousel-prev");
+            let index = 0;
+
+            const update = () => {
+                const spv = window.innerWidth < 640 ? 1 : (window.innerWidth < 1024 ? 2 : 4);
+                const max = Math.max(0, slides.length - spv);
+                index = Math.max(0, Math.min(index, max));
+                
+                // Tính toán chính xác khoảng cách trượt
+                const gap = 16; 
+                const slideWidth = slides[0].offsetWidth;
+                track.style.transform = `translateX(-${index * (slideWidth + gap)}px)`;
+                
+                prev.style.display = index === 0 ? "none" : "block";
+                next.style.display = index === max ? "none" : "block";
+            };
+
+            next.onclick = () => { index++; update(); };
+            prev.onclick = () => { index--; update(); };
+            window.addEventListener("resize", update);
+            update();
+        });
+    </script>
 }
