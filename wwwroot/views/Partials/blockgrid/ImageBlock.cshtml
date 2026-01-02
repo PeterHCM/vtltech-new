@@ -6,7 +6,6 @@
 @using System.Collections.Generic
 
 @{
-    // Khai báo biến C#
     var content = Model.Content;
     var images = content.Value<IEnumerable<IPublishedContent>>("images")?.ToList() ?? new List<IPublishedContent>();
     var title = content.Value<string>("title");
@@ -24,292 +23,35 @@
     var keyShort = content.Key.ToString("N").Substring(0, 8);
     var image = images.FirstOrDefault();
 }
-
 <div class="@blockClass">
-    <div class="p-4 rounded-lg shadow-md h-full bg-white dark:bg-gray-900 transition hover:shadow-lg hover:-translate-y-1 hover:scale-[1.01] duration-300">
-        
-        @if (!string.IsNullOrEmpty(title))
+    <div class="vtl-container">
+        @if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(description))
         {
-            <h2 class="text-xl font-bold mb-2 text-primary dark:text-white">@title</h2>
+            <div class="block-header mb-4">
+                @if (!string.IsNullOrWhiteSpace(title)) { <h2 class="text-xl font-semibold">@title</h2> }
+                @if (!string.IsNullOrWhiteSpace(description)) { <p class="text-gray-600 dark:text-gray-300">@description</p> }
+            </div>
         }
 
-        @if (!string.IsNullOrEmpty(description))
-        {
-            <p class="text-sm mb-4 text-gray-700 dark:text-gray-300">@description</p>
-        }
-
-        @switch (layout)
-        {
-            case "single":
-                // ----------------------------------------------------
-                // Layout 1: SINGLE IMAGE
-                // ----------------------------------------------------
-                if (image != null)
-                {
-                    <div class="aspect-[16/9] overflow-hidden rounded-lg group relative">
-                        @if (!string.IsNullOrEmpty(link?.Url))
-                        {
-                            <a href="@link.Url" target="@link.Target" rel="noopener" class="block w-full h-full">
-                                <img src="@image.Url()" alt="@image.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110" loading="lazy" />
-                            </a>
-                        }
-                        else
-                        {
-                            <img src="@image.Url()" alt="@image.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110" loading="lazy" />
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-red-500 dark:text-red-400 opacity-50">Chưa chọn ảnh nào.</p>
-                }
-                break;
-
-            case "carousel":
-                // ----------------------------------------------------
-                // Layout 2: CAROUSEL (Slider)
-                // ----------------------------------------------------
-                if (images.Any())
-                {
-                    <div class="relative w-full overflow-hidden rounded-lg">
-                        <div id="carousel-@keyShort" class="flex transition-transform duration-500 ease-in-out">
-                            @foreach (var img in images)
-                            {
-                                <div class="w-full flex-shrink-0 aspect-[16/9] overflow-hidden group">
-                                    <img src="@img.Url()" alt="@img.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110" loading="lazy" />
-                                </div>
-                            }
-                        </div>
-
-                        <button onclick="prevSlide('@keyShort')" class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/20 dark:bg-white/10 text-white p-2 rounded-full hover:bg-white/40 dark:hover:bg-white/20 transition-colors" aria-label="Previous slide">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
-
-                        <button onclick="nextSlide('@keyShort')" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/20 dark:bg-white/10 text-white p-2 rounded-full hover:bg-white/40 dark:hover:bg-white/20 transition-colors" aria-label="Next slide">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const key = "@keyShort";
-                                const carousel = document.getElementById("carousel-" + key);
-                                if (!carousel) return;
-                                
-                                const track = carousel; 
-                                const totalSlides = track.children.length; 
-                                let currentIndex = 0;
-                                let slideInterval;
-                                const intervalTime = 5000;
-
-                                if (totalSlides <= 1) {
-                                    const container = carousel.closest('.relative.w-full.overflow-hidden.rounded-lg');
-                                    if(container) {
-                                        container.querySelectorAll('button').forEach(btn => btn.style.display = 'none');
-                                    }
-                                    return;
-                                }
-
-                                function updateSlide() {
-                                    track.style.transform = `translateX(-${currentIndex * 100}%)`; 
-                                }
-                                
-                                function startAutoSlide() {
-                                    clearInterval(slideInterval);
-                                    slideInterval = setInterval(() => {
-                                        currentIndex = (currentIndex + 1) % totalSlides;
-                                        updateSlide();
-                                    }, intervalTime);
-                                }
-
-                                // ĐỐI TƯỢNG ĐIỀU KHIỂN CỤC BỘ (CHỈ DÀNH CHO BLOCK NÀY)
-                                const controller = {
-                                    next: function() {
-                                        clearInterval(slideInterval);
-                                        currentIndex = (currentIndex + 1) % totalSlides;
-                                        updateSlide();
-                                        startAutoSlide(); 
-                                    },
-                                    prev: function() {
-                                        clearInterval(slideInterval);
-                                        currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
-                                        updateSlide();
-                                        startAutoSlide(); 
-                                    }
-                                };
-
-                                // 1. TẠO REGISTRY TOÀN CỤC NẾU CHƯA CÓ
-                                if (typeof window.carouselRegistry === 'undefined') {
-                                    window.carouselRegistry = {};
-                                    
-                                    // 2. CHỈ ĐỊNH NGHĨA CÁC HÀM GLOBAL MỘT LẦN!
-                                    window.nextSlide = function(k) {
-                                        window.carouselRegistry[k]?.next();
-                                    }
-
-                                    window.prevSlide = function(k) {
-                                        window.carouselRegistry[k]?.prev();
-                                    }
-                                }
-                                
-                                // 3. ĐĂNG KÝ CONTROLLER CỦA BLOCK HIỆN TẠI VÀO REGISTRY
-                                window.carouselRegistry[key] = controller;
-                                
-                                // Khởi chạy và Xử lý Hover
-                                startAutoSlide();
-                                carousel.addEventListener('mouseenter', () => clearInterval(slideInterval));
-                                carousel.addEventListener('mouseleave', startAutoSlide);
-                            });
-                        </script>
-                    </div>
-                }
-                else
-                {
-                    <p class="text-red-400 dark:text-red-300 opacity-50">Không có ảnh nào được chọn.</p>
-                }
-                break;
-
-            case "grid":
-                // ----------------------------------------------------
-                // Layout 3: GRID (Ảnh Chính + Lưới Ảnh Nhỏ)
-                // ----------------------------------------------------
-                if (images.Any())
-                {
-                    var featuredImage = images.FirstOrDefault();
-                    var gridImages = images.Skip(1);
-
-                    <div class="grid grid-cols-2 gap-2 auto-rows-fr sm:grid-cols-4 sm:auto-rows-min">
-                        
-                        @* --- 1. HÌNH LỚN --- *@
-                        @if (featuredImage != null)
-                        {
-                            <div class="col-span-2 row-span-2 overflow-hidden rounded-lg group aspect-[4/3] sm:aspect-auto">
-                                @if (!string.IsNullOrEmpty(link?.Url))
-                                {
-                                    <a href="@link.Url" target="@link.Target" rel="noopener" class="block w-full h-full">
-                                        <img src="@featuredImage.Url()" alt="@featuredImage.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110" loading="lazy" />
-                                    </a>
-                                }
-                                else
-                                {
-                                    <img src="@featuredImage.Url()" alt="@featuredImage.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110" loading="lazy" />
-                                }
-                            </div>
-                        }
-
-                        @* --- 2. LƯỚI ẢNH NHỎ --- *@
-                        @if (gridImages.Any())
-                        {
-                            @foreach (var img in gridImages)
-                            {
-                                <div class="aspect-square sm:aspect-[16/9] overflow-hidden rounded-lg group">
-                                    @if (!string.IsNullOrEmpty(link?.Url))
-                                    {
-                                        <a href="@link.Url" target="@link.Target" rel="noopener" class="block w-full h-full">
-                                            <img src="@img.Url()" alt="@img.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110" loading="lazy" />
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <img src="@img.Url()" alt="@img.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110" loading="lazy" />
-                                    }
-                                </div>
-                            }
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-red-400 dark:text-red-300 opacity-50">Không có ảnh nào được chọn cho layout Grid.</p>
-                }
-                break;
-
-            case "thumbnail-gallery":
-                // ----------------------------------------------------
-                // Layout 4: THUMBNAIL GALLERY (Ảnh Lớn + Lưới Thumbnails)
-                // ----------------------------------------------------
-                if (images.Any())
-                {
-                    var mainImage = images.FirstOrDefault();
-                    var mainImageKey = $"main-image-{keyShort}";
-                    
-                    <div class="space-y-4">
-                        
-                        @* --- 1. HÌNH LỚN (MAIN VIEW) --- *@
-                        @if (mainImage != null)
-                        {
-                            <div class="aspect-video overflow-hidden rounded-lg relative">
-                                <img id="@mainImageKey" 
-                                     src="@mainImage.Url()" 
-                                     alt="@mainImage.Name" 
-                                     class="w-full h-full object-cover transition-opacity duration-300" 
-                                     loading="lazy" />
-                            </div>
-                        }
-
-                        @* --- 2. LƯỚI ẢNH NHỎ (THUMBNAIL GALLERY) --- *@
-                        <div id="thumbnail-@keyShort" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                            @foreach (var (img, index) in images.Select((item, index) => (item, index)))
-                            {
-                                <div class="aspect-square overflow-hidden rounded-lg group relative cursor-pointer border-2 border-transparent thumbnail-item @(index == 0 ? "border-primary" : "")"
-                                     data-image-url="@img.Url()"
-                                     data-index="@index"
-                                     aria-label="View @img.Name">
-                                    
-                                    <img src="@img.Url()" alt="@img.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110" loading="lazy" />
-                                </div>
-                            }
-                        </div>
-                        
-                        @* --- 3. LOGIC JAVASCRIPT CỤC BỘ VÀ AN TOÀN --- *@
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const galleryKey = "@keyShort";
-                                const mainImageElement = document.getElementById("main-image-" + galleryKey);
-                                const thumbnailContainer = document.getElementById("thumbnail-" + galleryKey);
-                                
-                                if (!mainImageElement || !thumbnailContainer) return;
-
-                                const thumbnails = thumbnailContainer.querySelectorAll('.thumbnail-item');
-                                let currentActiveThumbnail = thumbnails[0];
-
-                                thumbnails.forEach(thumb => {
-                                    thumb.addEventListener('click', function() {
-                                        const newUrl = this.dataset.imageUrl;
-                                        
-                                        // 1. Cập nhật hình lớn
-                                        mainImageElement.style.opacity = '0'; // Hiệu ứng mờ trước khi đổi
-                                        setTimeout(() => {
-                                            mainImageElement.src = newUrl;
-                                            mainImageElement.style.opacity = '1';
-                                        }, 100);
-                                        
-                                        // 2. Cập nhật border (Active State)
-                                        if (currentActiveThumbnail) {
-                                            currentActiveThumbnail.classList.remove('border-primary');
-                                            currentActiveThumbnail.classList.add('border-transparent');
-                                        }
-                                        this.classList.add('border-primary');
-                                        this.classList.remove('border-transparent');
-                                        currentActiveThumbnail = this;
-                                    });
-                                });
-                            });
-                        </script>
-                    </div>
-                }
-                else
-                {
-                    <p class="text-red-400 dark:text-red-300 opacity-50">Không có ảnh nào được chọn cho layout Thumbnail Gallery.</p>
-                }
-                break;
-
-            default:
-                <p class="text-red-400 opacity-50">Layout <strong>@layout</strong> chưa có</p>
-                break;
-        }
+        @RenderLayout(layout, images, keyShort)
     </div>
 </div>
+
+@functions {
+    IHtmlContent RenderLayout(string layout, IEnumerable<IPublishedContent> images, string keyShort)
+    {
+        var partialName = layout switch
+        {
+            "single" => "ImageSingle",
+            "carousel" => "ImageCarousel",
+            "grid" => "ImageGrid",
+            "thumbnail-gallery" => "ImageThumbnail",
+            "masonry" => "ImageMasonry",
+            _ => null
+        };
+
+        return partialName != null
+            ? Html.PartialAsync($"Partials/Shared/{partialName}", images, new ViewDataDictionary(ViewData) { { "KeyShort", keyShort } }).Result
+            : new HtmlString($"<p class='text-red-400 opacity-50'>Layout <strong>{layout}</strong> chưa có</p>");
+    }
+}

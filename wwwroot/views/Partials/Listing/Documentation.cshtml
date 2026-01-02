@@ -3,157 +3,129 @@
 @inject Umbraco.Cms.Web.Common.UmbracoHelper Umbraco
 
 @functions {
-    List<string> GetCategories(IPublishedContent doc)
-    {
-        var val = doc.Value("category");
-        return val switch
-        {
-            IEnumerable<string> list => list.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToList(),
-            string s => s.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                         .Select(x => x.Trim()).Where(x => x.Length > 0).ToList(),
-            _ => new List<string>()
-        };
+    // Hàm lấy danh sách Category an toàn
+    List<string> GetCategories(IPublishedContent doc) {
+        var val = doc?.Value("category");
+        if (val == null) return new List<string>();
+        
+        if (val is IEnumerable<string> list) 
+            return list.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+        
+        return val.ToString().Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                  .Select(x => x.Trim()).ToList();
     }
 }
 
 @{
-    var allDocuments = Umbraco.ContentAtRoot()
-        .SelectMany(root => root.DescendantsOfType("documentation"))
+    var allDocuments = Umbraco.AssignedContentItem?
+        .DescendantsOfType("documentation")
         .ToList();
 
-    var mainCats = new[] { "Company Profile", "Manufacturer", "Technical" };
-    var allCategories = allDocuments
-        .SelectMany(GetCategories)
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .OrderBy(c => c)
-        .ToList();
-
-    var categoryList = new List<string> { "All" };
-    categoryList.AddRange(mainCats);
-    if (allCategories.Except(mainCats, StringComparer.OrdinalIgnoreCase).Any())
-    {
-        categoryList.Add("Other");
-    }
+    // 4 mục chính bạn yêu cầu
+    var mainCats = new List<string> { "All", "Company Profile", "Manufacturer", "Technical" };
+    
+    // Lấy các mục còn lại để cho vào dropdown
+    var otherCats = allDocuments.SelectMany(GetCategories)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Where(c => !mainCats.Contains(c, StringComparer.OrdinalIgnoreCase))
+                    .OrderBy(c => c).ToList();
 }
-<!-- Filter buttons -->
-<div class="flex flex-wrap justify-center gap-3 mt-10 mb-12 px-6">
-  @foreach (var cat in categoryList)
-  {
-      <button data-category="@cat"
-          class="filter-btn px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-primary hover:text-white transition">
-          @cat
-      </button>
-  }
-</div>
 
-<!-- Document Grid -->
-<div id="docGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 pb-16">
-  @foreach (var item in allDocuments)
-  {
-      var title = item.Value<string>("title") ?? item.Name;
-      var description = item.Value<string>("description");
-      var manufacturer = item.Value<string>("manufacturer");
-      var categories = GetCategories(item);
-      var updateDate = item.UpdateDate.ToString("dd/MM/yyyy");
-      var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url() ?? "/media/default/VTL_logo.svg";
-      var fileUrl = item.Url();
+<section x-data="{ 
+    activeCat: 'All',
+    shouldShow(cardCatsStr) {
+        if (this.activeCat === 'All') return true;
+        let cardCats = cardCatsStr.split(',').map(s => s.trim().toLowerCase());
+        return cardCats.includes(this.activeCat.toLowerCase());
+    }
+}" class="documentation">
 
-      var categoryAttr = categories.Any() ? string.Join(",", categories) : "Other";
+    <div class="flex flex-wrap items-center gap-4 mt-12 mb-8 border-b border-slate-200 dark:border-white/10 pb-4">
+        
+        @* 4 Mục chính như cũ *@
+        <div class="flex flex-wrap gap-2">
+            @foreach (var cat in mainCats)
+            {
+                <button @@click="activeCat = '@cat'"
+                        :class="activeCat === '@cat' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'"
+                        class="px-5 py-2 text-xs font-bold uppercase tracking-widest transition-all hover:bg-primary hover:text-white">
+                    @cat
+                </button>
+            }
+        </div>
 
-      <div class="doc-card card group flex flex-col justify-between p-6" data-categories="@categoryAttr">
-        <div>
-          <div class="flex items-center gap-3 mb-4">
-            <div class="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary overflow-hidden">
-                <img src="@iconUrl" alt="@title" class="h-full w-auto object-contain" />
+        @* Dropdown cho các Category khác *@
+        @if (otherCats.Any())
+        {
+            <div class="relative" x-data="{ open: false }" @@click.away="open = false">
+                <button @@click="open = !open" 
+                        :class="!mainCats.includes(activeCat) && activeCat !== 'All' ? 'border-primary text-primary' : 'border-slate-300 dark:border-white/20 text-slate-500'"
+                        class="px-5 py-2 text-xs font-bold uppercase tracking-widest border flex items-center gap-2 hover:border-primary transition-all">
+                    <span x-text="!mainCats.includes(activeCat) ? activeCat : 'Other Categories'"></span>
+                    <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 9l-7 7-7-7" stroke-width="2"/></svg>
+                </button>
+
+                <div x-show="open" x-transition 
+                     class="absolute left-0 mt-2 w-56 bg-white dark:bg-[#121214] border border-slate-200 dark:border-white/10 shadow-2xl z-50 py-2">
+                    @foreach (var cat in otherCats)
+                    {
+                        <button @@click="activeCat = '@cat'; open = false"
+                                class="w-full text-left px-4 py-2 text-xs font-bold uppercase hover:bg-primary hover:text-white text-slate-600 dark:text-slate-400 transition-colors">
+                            @cat
+                        </button>
+                    }
+                </div>
             </div>
-            <h3 class="text-lg font-semibold leading-snug group-hover:text-primary transition-colors">@title</h3>
-          </div>
+        }
+    </div>
 
-          @if (!string.IsNullOrWhiteSpace(description))
-          {
-              <p class="text-sm clamp-3-lines mb-3">@description</p>
-          }
-          @if (!string.IsNullOrWhiteSpace(manufacturer))
-          {
-              <p class="text-sm mb-2"><strong>Manufacturer:</strong> @manufacturer</p>
-          }
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @foreach (var item in allDocuments)
+        {
+            var title = item.Value<string>("title") ?? item.Name;
+            var categories = GetCategories(item);
+            var categoryAttr = string.Join(",", categories);
+            var updateDate = item.UpdateDate.ToString("dd/MM/yyyy");
+            var description = item.Value<string>("description");
+            var fileUrl = item.Url();
+            var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url() ?? "/media/default/pdf-icon.svg";
 
-          <div class="flex items-center gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
-              <span class="inline-flex items-center gap-1">
-                  <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 11h10M7 15h10" />
-                  </svg>
-                  @string.Join(", ", categories)
-              </span>
-              <span class="inline-flex items-center gap-1 ml-4">
-                  <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  @updateDate
-              </span>
-          </div>
-        </div>
+            <div x-show="shouldShow('@categoryAttr')" 
+                 class="group bg-white dark:bg-[#0a0a0b] border border-slate-200 dark:border-white/5 p-6 flex flex-col justify-between transition-all hover:border-primary/50">
+                
+                <div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 border border-slate-200 dark:border-white/10 p-2 shrink-0">
+                                <img src="@iconUrl" class="w-full h-full object-contain" />
+                            </div>
+                            <h3 class="text-sm font-black uppercase text-slate-900 dark:text-white group-hover:text-primary">@title</h3>
+                        </div>
+                        @* --- HIỂN THỊ NGÀY --- *@
+                        <span class="text-[10px] font-mono text-slate-400">@updateDate</span>
+                    </div>
 
-        <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between items-center">
-          @if (!string.IsNullOrWhiteSpace(fileUrl))
-          {
-              <a href="@fileUrl" target="_blank" rel="noopener noreferrer"
-                 class="card-detail inline-flex items-center gap-2 text-primary hover:underline">
-                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-                  </svg>
-                  Download
-              </a>
-          }
-          else
-          {
-              <span class="text-sm text-gray-400 dark:text-gray-500 italic">No file</span>
-          }
-        </div>
-      </div>
-  }
-</div>
+                    @* --- HIỂN THỊ MÔ TẢ NGẮN --- *@
+                    @if (!string.IsNullOrWhiteSpace(description))
+                    {
+                        <p class="text-[12px] text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">@description</p>
+                    }
+                    
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        @foreach(var c in categories) {
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 bg-slate-100 dark:bg-white/5 text-slate-400 uppercase">#@c</span>
+                        }
+                    </div>
+                </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const filterButtons = document.querySelectorAll(".filter-btn");
-  const docCards = document.querySelectorAll(".doc-card");
-  const mainCategories = ["Company Profile", "Manufacturer", "Technical"];
-
-  function filterDocs(category) {
-    docCards.forEach(card => {
-      const cardCategories = (card.dataset.categories || "").split(",").map(c => c.trim());
-      const isMain = cardCategories.some(c => mainCategories.includes(c));
-
-      let show = false;
-      if (category === "All") show = true;
-      else if (category === "Other") show = !isMain;
-      else show = cardCategories.includes(category);
-
-      card.style.display = show ? "block" : "none";
-    });
-
-    filterButtons.forEach(btn => {
-      const isActive = btn.dataset.category === category;
-      btn.classList.toggle("bg-primary", isActive);
-      btn.classList.toggle("text-white", isActive);
-    });
-  }
-
-  const initialCategory = decodeURIComponent(location.hash.replace("#", "")) || "All";
-  filterDocs(initialCategory);
-
-  filterButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const category = btn.dataset.category;
-      location.hash = encodeURIComponent(category);
-      filterDocs(category);
-    });
-  });
-
-  window.addEventListener("hashchange", () => {
-    const newCategory = decodeURIComponent(location.hash.replace("#", "")) || "All";
-    filterDocs(newCategory);
-  });
-});
-</script>
+                <div class="mt-6 pt-4 border-t border-dashed border-slate-200 dark:border-white/10 flex justify-between items-center">
+                    <span class="text-[10px] font-mono text-slate-400">REF: @item.Id</span>
+                    <a href="@fileUrl" target="_blank" class="flex items-center gap-2 text-[10px] font-black uppercase text-primary hover:underline">
+                        Download
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" stroke-width="2"/></svg>
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</section>

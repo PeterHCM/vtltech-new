@@ -1,23 +1,24 @@
 @using Umbraco.Cms.Web.Common.PublishedModels
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @using Umbraco.Cms.Core.Models
+@using Umbraco.Extensions
 @{
     Layout = "layout.cshtml";
 
     // Thông tin cơ bản
-    var title = Model.Value<string>("title");
+    var title = Model.Value<string>("title") ?? Model.Name;
     var description = (Model.Value<string>("description") ?? "").Replace("\n", "<br />");
     var manufacturer = Model.Value<string>("manufacturer");
     var publishDate = Model.UpdateDate;
 
     // Link download
     var documentUrl = Model.Value<IEnumerable<Link>>("Link")?.FirstOrDefault()?.Url ?? "#";
-    var downloadText = Umbraco?.GetDictionaryValue("Download") ?? "Xem / Download";
+    var downloadText = Umbraco?.GetDictionaryValue("Download") ?? "View / Download Asset";
 
     // Danh mục
-    var categories = Model.Value<IEnumerable<string>>("category");
+    var categories = Model.Value<IEnumerable<string>>("category") ?? Enumerable.Empty<string>();
 
-    // Hình ảnh & icon
+    // Hàm lấy ảnh/icon chuẩn SEO & Performance
     string GetImageUrl(IEnumerable<IPublishedContent> images, int width = 400)
     {
         var imgUrl = images?.FirstOrDefault()?.Url();
@@ -27,67 +28,86 @@
             : $"{imgUrl}?width={width}&quality=80&format=webp";
     }
 
-    var imageUrl = GetImageUrl(Model.Value<IEnumerable<IPublishedContent>>("image"));
-    var iconUrl = GetImageUrl(Model.Value<IEnumerable<IPublishedContent>>("icon"));
+    var imageUrl = GetImageUrl(Model.Value<IEnumerable<IPublishedContent>>("image"), 800);
+    var iconUrl = GetImageUrl(Model.Value<IEnumerable<IPublishedContent>>("icon"), 100);
 }
 
 @await Html.PartialAsync("Partials/Shared/banner", Model)
 
-<div class="container-main block-wrapper">
-    <!-- Header: icon + title + date -->
-    <div class="flex items-center gap-4 mb-6">
-        <img src="@iconUrl" alt="Icon" class="w-12 h-12 object-contain" />
-        <div>
-            <h3>@title</h3>
-            <p class="text-sm text-gray-400 flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                @publishDate.ToString("dd/MM/yyyy")
-            </p>
-        </div>
-    </div>
-
-    <!-- Description -->
-    <div class="mb-6">
-        <p>@Html.Raw(description)</p>
-    </div>
-
-    <!-- Manufacturer & Categories -->
-    <div class="mb-6">
-        @if (!string.IsNullOrWhiteSpace(manufacturer))
-        {
-            <div class="flex items-center gap-2 mt-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10v11h18V10l-6-4v4h-6V6l-6 4z" />
-                </svg>
-                <span>@manufacturer</span>
-            </div>
-        }
-
-        @if (categories?.Any() == true)
-        {
-            <div class="flex items-center gap-2 mt-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 11h10M7 15h10" />
-                </svg>
-                <div class="mt-1 flex flex-wrap">
-                    @foreach (var cat in categories)
-                    {
-                        <span class="inline-block bg-gray-700 text-sm rounded-full mr-2 px-2 py-1">@cat</span>
-                    }
+<div class="vtl-container py-16 md:py-24">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        <div class="lg:col-span-5 animate-fade-in">
+            <div class="vtl-block-adaptive !p-0 overflow-hidden sticky top-24">
+                <div class="aspect-[4/5] bg-gray-50 dark:bg-white/[0.02] flex items-center justify-center p-8">
+                    <img src="@imageUrl" alt="@title" class="w-full h-full object-contain transition-transform duration-700 hover:scale-105" />
                 </div>
             </div>
-        }
-    </div>
+        </div>
 
-    <!-- Download Button -->
-    <div class="mt-8">
-        <a href="@documentUrl" class="btn-outline text-primary gap-3 inline-flex items-center">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-            </svg>
-            @downloadText
-        </a>
+        <div class="lg:col-span-7 flex flex-col justify-center">
+            
+            @* 1. Badge & Date *@
+            <div class="flex items-center gap-4 mb-6">
+                <span class="vtl-section-subtitle !mb-0">Technical Data</span>
+                <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                <span class="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Updated: @publishDate.ToString("MMM dd, yyyy")</span>
+            </div>
+
+            @* 2. Icon & Title chuẩn vtl-heading *@
+            <div class="flex items-start gap-6 mb-8">
+                <div class="w-16 h-16 shrink-0 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 p-3 rounded-2xl shadow-sm">
+                    <img src="@iconUrl" alt="Icon" class="w-full h-full object-contain" />
+                </div>
+                <h1 class="vtl-section-title !text-3xl md:!text-4xl !mb-0">@title</h1>
+            </div>
+
+            @* 3. Description *@
+            <div class="mb-10">
+                <div class="vtl-section-divider !mx-0 !mb-6"></div>
+                <div class="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 leading-relaxed font-medium">
+                    @Html.Raw(description)
+                </div>
+            </div>
+
+            @* 4. Metadata (Manufacturer & Categories) *@
+            <div class="space-y-4 mb-10 p-6 bg-gray-50 dark:bg-white/[0.02] rounded-2xl border border-gray-100 dark:border-white/5">
+                @if (!string.IsNullOrWhiteSpace(manufacturer))
+                {
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 w-24">Manufacturer:</span>
+                        <span class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">@manufacturer</span>
+                    </div>
+                }
+
+                @if (categories.Any())
+                {
+                    <div class="flex items-start gap-3">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 w-24 mt-1">Categories:</span>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach (var cat in categories)
+                            {
+                                <span class="px-3 py-1 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[9px] font-bold uppercase rounded-lg text-gray-500">
+                                    #@cat
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* 5. Download Action chuẩn vtl-btn *@
+            <div class="flex flex-wrap items-center gap-6">
+                <a href="@documentUrl" target="_blank" class="vtl-btn-primary gap-3 shadow-xl shadow-primary/30">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                    </svg>
+                    @downloadText
+                </a>
+                
+                @* Secondary link style *@
+                <span class="text-[10px] font-mono text-gray-400 uppercase tracking-tighter">Ref ID: @Model.Id</span>
+            </div>
+        </div>
     </div>
 </div>

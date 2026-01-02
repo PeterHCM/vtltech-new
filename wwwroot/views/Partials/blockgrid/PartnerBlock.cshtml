@@ -1,29 +1,73 @@
 @inherits UmbracoViewPage<BlockGridItem>
 @using Umbraco.Cms.Core.Models.Blocks
-@using Umbraco.Cms.Core.Models
 @using Umbraco.Extensions
+
 @{
     var content = Model.Content;
-    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
-    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
-    var blockClass = $"col-span-12 row-span-12 sm:col-span-{columnSpan} sm:row-span-{rowSpan}";
+    var columnSpan = Model.ColumnSpan; 
     var title = content.Value<string>("title");
     var subTitle = content.Value<string>("subTitle");
     var partner = content.Value<IEnumerable<IPublishedContent>>("partner");
 }
-<div class="@blockClass">
-    <div class="block-wrapper py-10 px-4 md:px-10">
-        @if (!string.IsNullOrWhiteSpace(title))
-        {
-            <h2 class="text-center">@title</h2>
-        }
-        @if (!string.IsNullOrWhiteSpace(subTitle))
-        {
-            <h4 class="text-secondary text-center">@subTitle</h4>
-        }
-        @if (partner != null)
-        {
-            @await Html.PartialAsync("Partials/Listing/Partner", partner)
-        }
-    </div> 
+
+<div class="col-span-12" style="grid-column: span @columnSpan / span @columnSpan;">
+    @* Container chính với họa tiết lưới kỹ thuật *@
+    <section class="relative pt-8 overflow-hidden bg-slate-50 dark:bg-[#080809]">
+        
+        @* Background Kỹ thuật: Lưới tọa độ và các đốm sáng mờ *@
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" 
+                 style="background-image: radial-gradient(#3b82f6 1px, transparent 1px); background-size: 30px 30px;"></div>
+            <div class="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px]"></div>
+            <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-[120px]"></div>
+        </div>
+
+        <div class="relative">
+            
+            @* Header: Thiết kế bất đối xứng hoặc tập trung *@
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div class="max-w-2xl">
+                    @if (!string.IsNullOrWhiteSpace(subTitle))
+                    {
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-8 h-[2px] bg-primary"></span>
+                            <span class="text-primary text-xs font-bold uppercase tracking-[0.4em]">@subTitle</span>
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrWhiteSpace(title))
+                    {
+                        <h2 class="text-3xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight">
+                            @title<span class="text-primary">.</span>
+                        </h2>
+                    }
+                </div>
+                
+                @* Một chi tiết kỹ thuật nhỏ: Số lượng đối tác *@
+                <div class="hidden md:block">
+                    <div class="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase">
+                        Network Status: <span class="text-green-500">Connected</span><br />
+                        Protocol: <span class="text-primary">Partner_v2.0</span>
+                    </div>
+                </div>
+            </div>
+
+            @* Phần Partner Listing *@
+            @if (partner != null && partner.Any())
+            {
+                @* Ở đây tôi giả định bạn sẽ dùng lại Partial Partner. 
+                   Để hiện đại, bạn nên bọc nó trong một container có hiệu ứng Glassmorphism.
+                *@
+                <div class="relative z-20 rounded-2xl border border-slate-200 dark:border-white/5 bg-white/50 dark:bg-white/[0.02] backdrop-blur-sm p-8 md:p-12 shadow-2xl">
+                    @* Bốn góc trang trí kiểu ống ngắm kỹ thuật *@
+                    <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary/30 -translate-x-1 -translate-y-1"></div>
+                    <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-primary/30 translate-x-1 -translate-y-1"></div>
+                    <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary/30 -translate-x-1 translate-y-1"></div>
+                    <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary/30 translate-x-1 translate-y-1"></div>
+
+                    @await Html.PartialAsync("Partials/Listing/Partner", partner)
+                </div>
+            }
+        </div>
+    </section>
 </div>

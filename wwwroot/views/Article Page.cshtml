@@ -1,34 +1,54 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.Blocks
-@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<ArticlePage>
 
 @{
     Layout = "layout.cshtml";
-    var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-    {
-        { "heroBanner", "Partials/blocklist/heroBanner" },
-        { "textBlock", "Partials/blocklist/textBlock" },
-        { "ctaBlock", "Partials/blocklist/ctaBlock" },
-        { "internalDocument", "Partials/blocklist/internalDocument" },
-        { "imageBlock", "Partials/blocklist/imageBlock" },
-        { "linkList", "Partials/blocklist/linkList" }     
-    };
-    var blocks = Model.ContentBlocks;
+    var blocks = Model.Value<BlockGridModel>("pageContent");
+    
+    // Tiêu đề và thông tin bài viết
+    var title = Model.HasValue("title") ? Model.Value<string>("title") : Model.Name;
+    var publishDate = Model.CreateDate.ToString("dd/MM/yyyy");
 }
-@await Html.PartialAsync("Partials/Shared/banner", Model)
-<section class="intranet-article-page px-6 md:px-12 lg:px-24">
-    <div class="container">
-        @foreach (var block in blocks ?? Enumerable.Empty<BlockListItem>())
-        {
-            var alias = block.Content.ContentType.Alias;
 
-            if (blockViewMap.TryGetValue(alias, out var partialPath))
-            {
-                @await Html.PartialAsync(partialPath, block)
-            }
-            else
-            {
-                <p class="text-red-500">Không tìm thấy view cho block: <strong>@alias</strong></p>
-            }
-        }
+@await Html.PartialAsync("Partials/Shared/banner", Model)
+
+<article class="vtl-container py-12 md:py-20">
+    @* 1. Header của Bài viết: Tiêu đề và Ngày đăng *@
+    <div class="max-w-4xl mx-auto text-center md:text-left">
+        <div class="flex items-center gap-2 text-primary font-medium mb-4 justify-center md:justify-start">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            <span class="text-sm uppercase tracking-wider">Ngày đăng: @publishDate</span>
+        </div>
+        <h1 class="text-3xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight">@title</h1>
+        <div class="vtl-section-divider !mx-0 mt-6"></div>
     </div>
-</section>
+
+    @* 2. Nội dung bài viết (Block Grid) *@
+    @if (blocks != null && blocks.Any())
+    {
+        @* Dùng mx-auto và max-w để nội dung bài viết không bị tràn quá rộng khó đọc *@
+        <div class="grid grid-cols-12 gap-y-8 md:gap-y-12">
+            @foreach (var block in blocks)
+            {
+                var alias = block.Content.ContentType.Alias;
+                
+                @* Tối ưu Article: 
+                   - Nếu block chiếm 12 cột -> Cho vào container hẹp (max-w-4xl) để đọc văn bản tốt hơn.
+                   - Nếu là ảnh lớn -> Có thể để tràn rộng.
+                *@
+                <div class="col-span-12 lg:col-span-@(block.ColumnSpan) @(block.ColumnSpan >= 10 ? "max-w-4xl mx-auto w-full" : "")">
+                     @await Html.PartialAsync($"Partials/blockgrid/{alias}", block)
+                </div>
+            }
+        </div>
+    }
+</article>
+
+@* --- CSS cho Typography bài viết --- *@
+<style>
+    /* Format nội dung bài viết giống như các trang báo lớn */
+    article .prose p { margin-bottom: 1.5rem; line-height: 1.8; font-size: 1.125rem; }
+    article .prose h2 { font-size: 1.875rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; color: #111; }
+    article img { border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+</style>

@@ -14,228 +14,146 @@
     Layout = "layout.cshtml";
 
     var currentMember = await memberManager.GetCurrentMemberAsync();
-    var currentGroups = await memberManager.GetRolesAsync(currentMember);
-    var memberEntity = memberService.GetByKey(currentMember.Key);
-    List<IMember> members;
+    var members = new List<IMember>();
 
-    // Logic phân quyền: Nếu là BOD/Manager, xem tất cả. Nếu không, chỉ xem bản thân.
-    if (currentGroups.Contains("BOD") || currentGroups.Contains("Manager"))
+    if (currentMember != null)
     {
-        members = memberService.GetAllMembers()
-            .Where(m => m.ContentTypeAlias == "Member")
-            .OrderBy(m => m.GetValue<string>("fullName"))
-            .ToList();
-    }
-    else
-    {
-        members = new List<IMember> { memberEntity };             
+        var currentGroups = await memberManager.GetRolesAsync(currentMember);
+        if (currentGroups.Contains("BOD") || currentGroups.Contains("Manager"))
+        {
+            var allMembers = memberService.GetAllMembers();
+            if (allMembers != null)
+            {
+                members = allMembers
+                    .Where(m => m.ContentTypeAlias == "Member")
+                    .OrderBy(m => m.GetValue<string>("fullName") ?? m.Name)
+                    .ToList();
+            }
+        }
+        else
+        {
+            var memberEntity = memberService.GetByKey(currentMember.Key);
+            if (memberEntity != null) members.Add(memberEntity);
+        }
     }
 }
 
 @await Html.PartialAsync("Partials/Shared/banner")
 
-<section class="max-w-5xl mx-auto mt-12 p-6 bg-white dark:bg-gray-900 rounded-xl shadow-2xl">
-    <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">@Model.Title</h1>
-    <div class="prose max-w-none mb-8 text-gray-600 dark:text-gray-300">
-        @Html.Raw(Model.Description)
+<style>
+    :root {
+        --vtl-orange: #e06800;
+        --vtl-teal: #006361;
+    }
+    .bg-vtl-orange { background-color: var(--vtl-orange); }
+    .text-vtl-orange { color: var(--vtl-orange); }
+    .bg-vtl-teal { background-color: var(--vtl-teal); }
+    .text-vtl-teal { color: var(--vtl-teal); }
+    .from-vtl-orange { --tw-gradient-from: var(--vtl-orange) var(--tw-gradient-from-position); }
+    .to-vtl-teal { --tw-gradient-to: var(--vtl-teal) var(--tw-gradient-to-position); }
+</style>
+
+<section class="vtl-container py-12">
+    <div class="mb-12">
+        <h1 class="text-4xl font-black text-gray-900 dark:text-white uppercase">@Model.Title</h1>
+        <div class="h-1.5 w-32 bg-gradient-to-r from-vtl-orange to-vtl-teal rounded-full mt-3"></div>
     </div>
-    
-    @* --- Bắt đầu vòng lặp hiển thị chi tiết từng nhân viên --- *@
-    @foreach (var member in members)
-    {
-        // --- 1. Lấy dữ liệu (Sử dụng hàm GetSingleDropdownValue) --- //
-        var photoId = member.GetValue<Guid>("photo");
-        var photoUrl = photoId != Guid.Empty ? Umbraco.Media(photoId)?.Url() : "https://placehold.co/200x200/10B981/FFFFFF?text=Avatar";
 
-        var name = member.GetValue<string>("fullName");
-        var gender = member.GetValue<string>("gender");
-        var dateOfBirth = member.GetValue<DateTime?>("dateOfBirth");
-        var maritalStatus = GetSingleDropdownValue(member, "maritalStatus");
-        var nationalId = member.GetValue<string>("nationalId");
-        var dateOfIssue = member.GetValue<DateTime?>("dateOfIssue");
-        var placeOfIssue = member.GetValue<string>("placeOfIssue");
-        var taxCode = member.GetValue<string>("taxCode");
-        
-        var phone = member.GetValue<string>("phone");
-        var email = member.GetValue<string>("personalEmail");
-        var permanentAddress = member.GetValue<string>("permanentAddress");
-        var currentAddress = member.GetValue<string>("currentAddress");
+    <div class="space-y-12">
+        @foreach (var m in members)
+        {
+            var name = m.GetValue<string>("fullName") ?? m.Name;
+            
+            // Xử lý ảnh
+            string photoUrl = "https://placehold.co/300x300/f3f4f6/e06800?text=VTL";
+            var photoVal = m.GetValue("photo");
+            if (photoVal is string json && json.StartsWith("[")) {
+                try {
+                    using var doc = JsonDocument.Parse(json);
+                    var key = doc.RootElement[0].GetProperty("mediaKey").GetGuid();
+                    photoUrl = Umbraco.Media(key)?.Url() ?? photoUrl;
+                } catch { }
+            }
 
-        var position = GetSingleDropdownValue(member, "position");
-        var department = GetSingleDropdownValue(member, "department");
-        var dateOfJoining = member.GetValue<DateTime?>("dateOfJoining");
-        var contractType = GetSingleDropdownValue(member, "contractType");
+            // Xử lý Dropdowns
+            var posRaw = m.GetValue<string>("position");
+            var pos = posRaw?.StartsWith("[") == true ? JsonSerializer.Deserialize<List<string>>(posRaw)?.FirstOrDefault() : posRaw;
+            var depRaw = m.GetValue<string>("department");
+            var dep = depRaw?.StartsWith("[") == true ? JsonSerializer.Deserialize<List<string>>(depRaw)?.FirstOrDefault() : depRaw;
 
-        var emergencyContact1Name = member.GetValue<string>("emergencyContact1Name");
-        var emergencyContact1Relationship = GetSingleDropdownValue(member, "emergencyContact1Relationship");
-        var emergencyContact1Phone = member.GetValue<string>("emergencyContact1Phone");
-        var emergencyContact1Address = member.GetValue<string>("emergencyContact1Address");
-
-        var emergencyContact2Name = member.GetValue<string>("emergencyContact2Name");
-        var emergencyContact2Relationship = GetSingleDropdownValue(member, "emergencyContact2Relationship");
-        var emergencyContact2Phone = member.GetValue<string>("emergencyContact2Phone");
-        var emergencyContact2Address = member.GetValue<string>("emergencyContact2Address");
-
-        // --- 2. Trình bày HTML ---
-        <div class="mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-xl shadow-md transition duration-300 hover:shadow-lg border-l-4 border-blue-500">
-            <div class="flex flex-col items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-6">
-                @if (!string.IsNullOrWhiteSpace(photoUrl))
-                {
-                    <img src="@photoUrl" alt="@name" class="w-28 h-28 rounded-full mb-4 object-cover shadow-xl ring-4 ring-blue-500 dark:ring-blue-400" />
-                }
-                @if (!string.IsNullOrWhiteSpace(name))
-                {
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">@name</h3>
-                }
-                @if (!string.IsNullOrWhiteSpace(position))
-                {
-                    <p class="text-lg font-medium text-blue-600 dark:text-blue-400 mt-1">@position</p>
-                }
-                @if (!string.IsNullOrWhiteSpace(department))
-                {
-                    <p class="text-sm text-gray-500 dark:text-gray-400">(@department)</p>
-                }
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-700 dark:text-gray-300">
-                
-                @* --- Khối 1: Thông tin cá nhân --- *@
-                <div class="space-y-3">
-                    <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-white border-b pb-1 border-gray-200 dark:border-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
-                        Thông tin cá nhân
-                    </h2>
-                    
-                    @RenderDetail("Giới tính", gender, "M12 4c.53 0 1.05.07 1.56.2a8.004 8.004 0 01-5.188 5.188A8.002 8.002 0 014 12c0 2.21.895 4.215 2.343 5.657A8.002 8.002 0 0112 20c2.21 0 4.215-.895 5.657-2.343A8.002 8.002 0 0120 12c0-.53-.07-1.05-.2-1.56a8.004 8.004 0 01-5.188-5.188A8.002 8.002 0 0112 4z")
-                    @RenderDetail("Ngày sinh", dateOfBirth?.ToString("dd/MM/yyyy"), "M8 7V3m8 4V3m-9 8h.01M3 11h18a2 2 0 012 2v6a2 2 0 01-2 2H3a2 2 0 01-2-2v-6a2 2 0 012-2z")
-                    @RenderDetail("Tình trạng HN", maritalStatus, "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z")
-                    @RenderDetail("CCCD/CMND", nationalId, "M10 6.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zM12.559 7.747a.25.25 0 01-.254-.255c-.058-.294-.112-.591-.167-.891a.25.25 0 01.32-.236c.365.111.722.247 1.066.411a.25.25 0 01-.19.467c-.201-.11-.407-.216-.615-.318a.25.25 0 01-.16.291z")
-                    @RenderDetail("Ngày cấp", dateOfIssue?.ToString("dd/MM/yyyy"), "M8 7V3m8 4V3m-9 8h.01M3 11h18a2 2 0 012 2v6a2 2 0 01-2 2H3a2 2 0 01-2-2v-6a2 2 0 012-2z")
-                    @RenderDetail("Nơi cấp", placeOfIssue, "M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0zM17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z")
-                    @RenderDetail("Mã số thuế", taxCode, "M10 6.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zM12.559 7.747a.25.25 0 01-.254-.255c-.058-.294-.112-.591-.167-.891a.25.25 0 01.32-.236c.365.111.722.247 1.066.411a.25.25 0 01-.19.467c-.201-.11-.407-.216-.615-.318a.25.25 0 01-.16.291z")
-                    @RenderDetail("Địa chỉ thường trú", permanentAddress, "M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0zM17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z")
-                    @RenderDetail("Địa chỉ hiện tại", currentAddress, "M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0zM17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z")
-                </div>
-
-                @* --- Khối 2: Thông tin công việc & Liên hệ --- *@
-                <div class="space-y-3">
-                    <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-white border-b pb-1 border-gray-200 dark:border-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 dark:text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7z" /><path fill-rule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.4 7H5.6L2.2 3.6A1 1 0 013 2z" clip-rule="evenodd" /><path d="M10 13a1 1 0 00-1 1v3a1 1 0 102 0v-3a1 1 0 00-1-1z" /><path fill-rule="evenodd" d="M13.6 7H6.4L3 3.6V2a1 1 0 011-1h12a1 1 0 011 1v1.6l-3.4 3.4zm-.4 3l3.4 3.4A1 1 0 0117 14.6V17a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3a1 1 0 00-1-1H7a1 1 0 00-1 1v3a1 1 0 01-1 1H2a1 1 0 01-1-1v-2.4l3.4-3.4H3zm-5.6 0H6.4" clip-rule="evenodd" /></svg>
-                        Thông tin công việc
-                    </h2>
-                    
-                    @RenderDetail("Ngày vào công ty", dateOfJoining?.ToString("dd/MM/yyyy"))
-                    @RenderDetail("Chức vụ", position)
-                    @RenderDetail("Phòng ban", department)
-                    @RenderDetail("Loại hợp đồng", contractType)
-                    
-                    <h3 class="text-base font-semibold text-gray-800 dark:text-white mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">Liên hệ</h3>
-                    @RenderDetailLink("Điện thoại", phone, $"tel:{phone}", "M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.074 1.21a11.023 11.023 0 006.105 6.105l1.21-2.074a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z")
-                    @RenderDetailLink("Email", email, $"mailto:{email}", "M16 12a4 4 0 10-8 0 4 4 0 008 0zm-8 2a6 6 0 1112 0 6 6 0 01-12 0z")
-                </div>
-
-                @* --- Khối 3: Liên hệ khẩn cấp --- *@
-                <div class="space-y-3">
-                    <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-white border-b pb-1 border-gray-200 dark:border-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 dark:text-red-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 002 0V8a1 1 0 00-.445-.832l-1.5-1.5z" clip-rule="evenodd" /></svg>
-                        Liên hệ khẩn cấp
-                    </h2>
-                    
-                    @* Liên hệ 1 *@
-                    @if (!string.IsNullOrWhiteSpace(emergencyContact1Name))
-                    {
-                        <div class="border-b border-gray-100 dark:border-gray-700 pb-2">
-                            <p class="text-sm font-semibold text-gray-800 dark:text-white">@emergencyContact1Name</p>
-                            @if (!string.IsNullOrWhiteSpace(emergencyContact1Relationship))
-                            {
-                                <p class="text-xs italic text-gray-500 dark:text-gray-400">(@emergencyContact1Relationship)</p>
-                            }
-                            @RenderDetailLink("Điện thoại", emergencyContact1Phone, $"tel:{emergencyContact1Phone}", "M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.074 1.21a11.023 11.023 0 006.105 6.105l1.21-2.074a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z")
-                            @RenderDetail("Địa chỉ", emergencyContact1Address, "M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0zM17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z")
+            <div class="group relative bg-white dark:bg-gray-900 rounded-[3rem] shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                <div class="p-8 md:p-10">
+                    <div class="flex flex-col lg:flex-row gap-10">
+                        
+                        @* Cột 1: Profile *@
+                        <div class="lg:w-1/4 flex flex-col items-center lg:items-start">
+                            <div class="relative mb-6">
+                                <div class="absolute -inset-2 bg-gradient-to-tr from-vtl-orange to-vtl-teal rounded-[2.5rem] opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                                <img src="@photoUrl" class="relative w-40 h-40 rounded-[2.2rem] object-cover bg-white p-1 shadow-lg" />
+                            </div>
+                            <h3 class="text-2xl font-black text-gray-900 dark:text-white">@name</h3>
+                            <span class="mt-2 px-3 py-1 bg-vtl-orange/10 text-vtl-orange text-[10px] font-black uppercase rounded-full">@pos</span>
+                            
+                            <div class="flex gap-3 mt-6">
+                                <a href="tel:@m.GetValue("phone")" class="w-10 h-10 rounded-xl bg-vtl-orange text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-vtl-orange/30">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.074 1.21a11.023 11.023 0 006.105 6.105l1.21-2.074a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                </a>
+                                <a href="mailto:@m.GetValue("personalEmail")" class="w-10 h-10 rounded-xl bg-vtl-teal text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-vtl-teal/30">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                </a>
+                            </div>
                         </div>
-                    }
 
-                    @* Liên hệ 2 *@
-                    @if (!string.IsNullOrWhiteSpace(emergencyContact2Name))
-                    {
-                        <div class="pt-2">
-                            <p class="text-sm font-semibold text-gray-800 dark:text-white">@emergencyContact2Name</p>
-                            @if (!string.IsNullOrWhiteSpace(emergencyContact2Relationship))
-                            {
-                                <p class="text-xs italic text-gray-500 dark:text-gray-400">(@emergencyContact2Relationship)</p>
-                            }
-                            @RenderDetailLink("Điện thoại", emergencyContact2Phone, $"tel:{emergencyContact2Phone}", "M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.074 1.21a11.023 11.023 0 006.105 6.105l1.21-2.074a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z")
-                            @RenderDetail("Địa chỉ", emergencyContact2Address, "M12 11c0 2.761-3 3-3 3s-3-.239-3-3a3 3 0 116 0zM17.657 16.657L13 19.914l-4.657-3.257A2 2 0 018 14.586V12h8v2.586a2 2 0 01-.343 1.071z")
+                        @* Cột 2: Details *@
+                        <div class="lg:w-3/4 space-y-8">
+                            @* Thông tin chung *@
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50/50 dark:bg-white/5 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase">Phòng ban</label>
+                                    <span class="text-sm font-bold text-gray-700 dark:text-gray-200">@dep</span>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase">Ngày vào làm</label>
+                                    <span class="text-sm font-bold text-gray-700 dark:text-gray-200">@(m.GetValue<DateTime?>("dateOfJoining")?.ToString("dd/MM/yyyy") ?? "---")</span>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase">Mã số thuế</label>
+                                    <span class="text-sm font-bold text-gray-700 dark:text-gray-200">@m.GetValue("taxCode")</span>
+                                </div>
+                            </div>
+
+                            @* Khu vực Liên hệ khẩn cấp - HIỂN THỊ CẢ 2 *@
+                            <div class="space-y-4">
+                                <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-vtl-orange flex items-center gap-2">
+                                    <span class="w-4 h-0.5 bg-vtl-orange"></span> Liên hệ khẩn cấp
+                                </h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    @* Người thứ 1 *@
+                                    <div class="p-5 bg-white dark:bg-gray-800 rounded-3xl border-l-4 border-vtl-orange shadow-sm flex items-center justify-between">
+                                        <div>
+                                            <p class="text-[10px] font-bold text-gray-400 uppercase">Người thân 1</p>
+                                            <p class="text-sm font-black text-gray-900 dark:text-white uppercase mt-1">@m.GetValue("emergencyContact1Name")</p>
+                                            <p class="text-xs font-bold text-vtl-orange">@m.GetValue("emergencyContact1Phone")</p>
+                                        </div>
+                                        <div class="opacity-10 text-vtl-orange"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div>
+                                    </div>
+
+                                    @* Người thứ 2 *@
+                                    <div class="p-5 bg-white dark:bg-gray-800 rounded-3xl border-l-4 border-vtl-teal shadow-sm flex items-center justify-between">
+                                        <div>
+                                            <p class="text-[10px] font-bold text-gray-400 uppercase">Người thân 2</p>
+                                            <p class="text-sm font-black text-gray-900 dark:text-white uppercase mt-1">@m.GetValue("emergencyContact2Name")</p>
+                                            <p class="text-xs font-bold text-vtl-teal">@m.GetValue("emergencyContact2Phone")</p>
+                                        </div>
+                                        <div class="opacity-10 text-vtl-teal"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                         </div>
-                    }
+                    </div>
                 </div>
-
             </div>
-        </div>
-    }
+        }
+    </div>
 </section>
-
-@functions {
-    /// <summary>
-    /// Lấy giá trị đầu tiên từ thuộc tính Umbraco dạng Multi-Select Dropdown (JSON Array)
-    /// </summary>
-    private string GetSingleDropdownValue(IMember member, string alias)
-    {
-        var rawJson = member.GetValue<string>(alias);
-        if (string.IsNullOrWhiteSpace(rawJson)) return null;
-
-        try
-        {
-            var decodedList = JsonSerializer.Deserialize<List<string>>(rawJson);
-            // Trả về giá trị đầu tiên (hoặc null nếu list rỗng)
-            return decodedList?.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
-        }
-        catch (JsonException)
-        {
-            // Trả về chuỗi thô nếu giải mã lỗi
-            return rawJson;
-        }
-    }
-
-    /// <summary>
-    /// Helper render chi tiết dòng thông tin (label: value)
-    /// </summary>
-    private IHtmlContent RenderDetail(string label, string value, string svgPath = null)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return Html.Raw(string.Empty);
-
-        var icon = "";
-        if (!string.IsNullOrWhiteSpace(svgPath))
-        {
-            icon = $@"<svg xmlns='http://www.w3.org/2000/svg' class='h-4 w-4 text-gray-500 dark:text-gray-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='{svgPath}' /></svg>";
-        }
-
-        return Html.Raw($@"
-            <p class='text-sm flex items-center gap-2'>
-                {icon}
-                <strong>{label}:</strong> <span class='font-normal'>{value}</span>
-            </p>
-        ");
-    }
-
-    /// <summary>
-    /// Helper render chi tiết dòng thông tin có link (label: <a>value</a>)
-    /// </summary>
-    private IHtmlContent RenderDetailLink(string label, string value, string url, string svgPath = null)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return Html.Raw(string.Empty);
-
-        var icon = "";
-        if (!string.IsNullOrWhiteSpace(svgPath))
-        {
-            icon = $@"<svg xmlns='http://www.w3.org/2000/svg' class='h-4 w-4 text-gray-500 dark:text-gray-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='{svgPath}' /></svg>";
-        }
-
-        return Html.Raw($@"
-            <p class='text-sm flex items-center gap-2'>
-                {icon}
-                <strong>{label}:</strong> <a href='{url}' class='text-blue-600 dark:text-blue-400 hover:underline font-normal'>{value}</a>
-            </p>
-        ");
-    }
-}

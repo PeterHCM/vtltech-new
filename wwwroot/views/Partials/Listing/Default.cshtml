@@ -13,12 +13,12 @@
         var title = item.Name;
         var description = item.Value<string>("description");
         var imageUrl = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
-        <article class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+        <article class="group card">
             <a href="@item.Url()" class="group block h-full">
                 @if (!string.IsNullOrEmpty(imageUrl))
                 {
                     <div class="aspect-video overflow-hidden rounded-t-xl">                        
-                        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                        <img class="card-image" 
                             src="@imageUrl" 
                             alt="@title"
                             loading="lazy">
@@ -35,13 +35,13 @@
 
                 <div class="p-6 flex flex-col justify-between h-auto">
                     <div>
-                        <h3 class="text-xl font-bold text-primary dark:text-white mb-2 line-clamp-2">@title</h3> 
+                        <h3 class="line-clamp-2">@title</h3> 
                         @if (!string.IsNullOrWhiteSpace(description))
                         {
-                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">@description</p> 
+                            <p class="line-clamp-3">@description</p> 
                         }
                     </div>
-                    <span class="inline-block mt-4 text-primary dark:text-white hover:text-blue-500 text-sm font-medium transition-colors duration-200">
+                    <span class="card-detail">
                         @viewMoreText
                     </span>
                 </div>

@@ -1,47 +1,87 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
+@using Umbraco.Extensions
 
 @{
     Layout = "layout.cshtml";
     var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
     var fallbackPartial = "Partials/blockgrid/Default";
-    var title = Model.HasValue("title") 
-        ? Model.Value<string>("title") 
-        : Model.Name;
-    var description = (Model.Value<string>("description")?? "").Replace("\n", "<br />");
+    
+    var title = Model.HasValue("title") ? Model.Value<string>("title") : Model.Name;
+    var description = Model.Value<string>("description");
+    
     var originalImageUrl = Model.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
     var imageUrl = !string.IsNullOrEmpty(originalImageUrl)
         ? (originalImageUrl.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
             ? originalImageUrl
-            : $"{originalImageUrl}?width=800&quality=90&format=webp")
+            : $"{originalImageUrl}?width=1200&quality=90&format=webp")
         : "/media/default/VTL_logo.svg";
 }
 
 @await Html.PartialAsync("Partials/Shared/banner", Model)
-<section class="container-main Product">
-    @if (!string.IsNullOrWhiteSpace(title))
-    {
-        <h3>@title</h3>
-    }
-    @if (!string.IsNullOrWhiteSpace(description))
-    {
-        <p class="mb-6">@Html.Raw(description)</p>
-    }
-    <div class="w-full flex justify-center mt-8">
-        <img src="@imageUrl" alt="@title" class="max-w-full h-auto object-cover rounded-lg shadow-xl" />
+
+@* Bao bọc toàn bộ trong vtl-container *@
+<main class="vtl-container py-16 md:py-24">
+    
+    @* --- PHẦN 1: HEADER SẢN PHẨM --- *@
+    <div class="mb-16 animate-fade-in">
+        <span class="vtl-section-subtitle">Product Detail</span>
+        @if (!string.IsNullOrWhiteSpace(title))
+        {
+            <h1 class="vtl-section-title">@title</h1>
+            <div class="vtl-section-divider !mx-0"></div>
+        }
+        
+        @if (!string.IsNullOrWhiteSpace(description))
+        {
+            <div class="max-w-4xl text-gray-600 dark:text-gray-400 mt-6 text-lg leading-relaxed">
+                @Html.Raw(description.Replace("\n", "<br />"))
+            </div>
+        }
+
+        @* Ảnh sản phẩm chính nằm trong khung Adaptive *@
+        <div class="mt-12 vtl-block-adaptive !p-0 overflow-hidden group">
+            <div class="aspect-video md:aspect-[21/9] bg-gray-50 dark:bg-white/[0.02] flex items-center justify-center p-6 md:p-12">
+                <img src="@imageUrl" alt="@title" class="max-w-full max-h-full object-contain transition-transform duration-1000 group-hover:scale-105" />
+            </div>
+        </div>
     </div>
+
+    @* --- PHẦN 2: NỘI DUNG CHI TIẾT (BLOCKS) --- *@
     @if (blocks?.Any() == true)
     {
-        
-        <div class="grid grid-cols-12 auto-rows-min gap-4">
+        @* vtl-product-content là scope để khử lỗi dính nhau hoặc lệch chiều cao *@
+        <div class="vtl-product-content grid grid-cols-12 gap-y-12 md:gap-y-20 gap-x-6 md:gap-x-10 items-stretch">
             @foreach (var block in blocks)
             {
                 var alias = block.Content.ContentType.Alias;
                 var partialPath = $"Partials/blockgrid/{alias}";
                 var viewResult = viewEngine.FindView(ViewContext, partialPath, isMainPage: false);
                 var partialToRender = viewResult.Success ? partialPath : fallbackPartial;
+
                 @await Html.PartialAsync(partialToRender, block)
             }
         </div>
     }
-</section>
+</main>
+
+@* --- CSS FIX: Giải quyết lỗi dính nhau và khoảng không --- *@
+<style>
+    /* Đảm bảo các cột luôn chiếm full chiều cao để không bị lệch khung */
+    .vtl-product-content > div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Nếu bên trong là Accordion/Tabs, khử bỏ khoảng cách thừa để không bị "khung lồng khung" */
+    .vtl-product-content .vtl-block-adaptive {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Fix lỗi margin/padding của rich text bên trong block */
+    .vtl-product-content .prose {
+        max-width: none;
+    }
+</style>

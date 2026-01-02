@@ -4,39 +4,84 @@
 @model IEnumerable<IPublishedContent>
 
 @{
-    var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
+    var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "CHI TIẾT DỰ ÁN";
 }
 
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 py-12">
     @foreach (var item in Model)
     {
         var title = item.Value<string>("title") ?? item.Name;
-        var description = item.Value<string>("description")?.Replace("\n", "<br />");
-        string GetImageUrl(IEnumerable<IPublishedContent> images, int width = 400)
-        {
-            var imgUrl = images?.FirstOrDefault()?.Url();
-            if (string.IsNullOrWhiteSpace(imgUrl)) return "/media/default/VTL_logo.svg";
-            return imgUrl.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
-                ? imgUrl
-                : $"{imgUrl}?width={width}&quality=80&format=webp";
-        }
-        var imageUrl = GetImageUrl(item.Value<IEnumerable<IPublishedContent>>("image"));
+        var description = item.Value<string>("description");
+        
+        var imgMedia = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault();
+        var imageUrl = imgMedia != null ? imgMedia.GetCropUrl(800, 500) : "/media/default/VTL_thumb.jpg";
         var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url() ?? "/media/default/VTL_logo.svg";
-        <div class="group card relative">        
-            <div class="aspect-video overflow-hidden relative">
-                <img src="@imageUrl" alt="@title" class="card-image" />
-                <div class="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </div>
-            <div class="p-4 flex justify-center">
-                <img src="@iconUrl" alt="@title" class="w-auto h-12 object-contain" />
-            </div>
-            <div class="card-body">
-                <h3>@title</h3>
-                <p class="line-clamp-3" title="@description">@Html.Raw(description)</p>
-                <div class="mt-4 text-right hidden group-hover:flex transition-all duration-300">
-                <a href="@item.Url()" class="card-detail">@viewMoreText</a>
+
+        <article class="group relative flex flex-col h-full bg-white dark:bg-[#080809] border border-slate-200 dark:border-white/5 transition-all duration-500 hover:shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)]">
+            
+            @* 1. Media Area: Tỷ lệ 16:9 với lớp phủ Blueprint *@
+            <div class="relative aspect-video overflow-hidden">
+                <img src="@imageUrl" alt="@title" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale-[50%] group-hover:grayscale-0" />
+                
+                @* Hiệu ứng Overlay: Lưới tọa độ *@
+                <div class="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none"
+                     style="background-image: linear-gradient(#3b82f6 1px, transparent 1px), linear-gradient(90deg, #3b82f6 1px, transparent 1px); background-size: 15px 15px;"></div>
+                
+                @* Scanner Line (Tia quét màu xanh đặc trưng) *@
+                <div class="absolute inset-x-0 top-0 h-[2px] bg-primary shadow-[0_0_20px_#3b82f6] z-10 opacity-0 group-hover:opacity-100 group-hover:animate-vtl-scan"></div>
+
+                @* Nhãn Project Code (Dựa trên ID dự án) *@
+                <div class="absolute top-4 right-4 bg-black/80 backdrop-blur-md px-2 py-1 border border-white/10">
+                    <span class="font-mono text-[9px] text-primary tracking-tighter uppercase">P-@(item.Id) // CONFIDENTIAL</span>
                 </div>
             </div>
-        </div>
+
+            @* 2. Icon Section: Đẩy lên cao để đè giữa 2 phần *@
+            <div class="relative -mt-8 px-6 flex justify-start z-20">
+                <div class="bg-white dark:bg-[#121214] p-3 border border-slate-200 dark:border-white/10 shadow-xl group-hover:border-primary/50 transition-colors duration-500">
+                    <img src="@iconUrl" alt="icon" class="w-10 h-10 md:w-12 md:h-12 object-contain dark:brightness-200" />
+                </div>
+            </div>
+
+            @* 3. Content Body *@
+            <div class="p-8 pt-6 flex flex-col flex-grow">
+                <h3 class="text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white mb-4 group-hover:text-primary transition-colors leading-tight">
+                    @title
+                </h3>
+                
+                <div class="flex-grow mb-8">
+                    <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed font-medium">
+                        @Html.Raw(description?.Replace("\n", "<br />"))
+                    </p>
+                </div>
+
+                @* 4. Action Footer: Kiểu nút bấm công nghệ cao *@
+                <div class="relative">
+                    <a href="@item.Url()" 
+                       class="inline-flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] text-primary group/btn">
+                        <span>@viewMoreText</span>
+                        <div class="relative flex items-center">
+                            <span class="w-12 h-[1px] bg-primary/30 group-hover/btn:w-20 group-hover/btn:bg-primary transition-all duration-500"></span>
+                            <div class="w-2 h-2 border-t border-r border-primary rotate-45 -ml-1"></div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            @* 5. Họa tiết kỹ thuật ở 4 góc card (Decorative Corners) *@
+            <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary/20 group-hover:border-primary transition-all"></div>
+            <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary/20 group-hover:border-primary transition-all"></div>
+        </article>
     }
 </div>
+
+<style>
+    @@keyframes vtl-scan {
+        0% { top: 0%; opacity: 0; }
+        50% { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+    }
+    .animate-vtl-scan {
+        animation: vtl-scan 2.5s linear infinite;
+    }
+</style>

@@ -3,90 +3,109 @@
 @using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Cms.Core.Models
 @using Microsoft.AspNetCore.Html
-@using System.Linq
 
 @{
-    // Các biến bạn đã cung cấp:
     var content = Model.Content;
     var title = content.Value<string>("title");
     var subTitle = content.Value<string>("subTitle");
-    var description = content.Value<string>("description")?.Replace("\n", "<br />");
+    var description = content.Value<string>("description");
     
-    // solutions là IEnumerable<IPublishedContent> chứa 6 liên kết/nội dung
+    // Lấy danh sách link (solutions)
     var solutions = content.Value<IEnumerable<IPublishedContent>>("links")?.ToList() ?? new List<IPublishedContent>();
-    var colSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
-    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
-    var blockClass = $"col-span-12 row-span-12 sm:col-span-{colSpan} sm:row-span-{rowSpan}";
-    // Hình ảnh Hero Image
-    var originalImageUrl = content.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
-    var isSvg = originalImageUrl?.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ?? false;
-    var heroImageUrl = originalImageUrl != null
-                ? (isSvg ? originalImageUrl : $"{originalImageUrl}?width=400&quality=80&format=webp")
-                : "/media/default/VTL_logo.svg";
+    var colSpan = Model.ColumnSpan;
+
+    // Hình ảnh trung tâm (Hero)
+    var imageMedia = content.Value<IPublishedContent>("image") 
+                     ?? content.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault();
+    var heroImageUrl = imageMedia != null ? imageMedia.GetCropUrl(400, 400) : "/media/default/VTL_logo.svg";
 
     if (solutions.Count < 6)
     {
-        <p class="text-red-500 p-4">Cảnh báo: Cần 6 mục trong trường 'solutions' để hiển thị bố cục đầy đủ.</p>
+        <div class="vtl-block-adaptive border-red-500/50 text-red-500 m-4">
+            <p>⚠️ Cần tối thiểu 6 mục trong 'links' để hiển thị bố cục đối xứng.</p>
+        </div>
         return;
     }
 }
-                
-<div class="@blockClass">
-    <div class="block-wrapper py-10 px-4 md:px-10">
-    <h2 class="text-center">@title</h2>
-    <h4 class="text-secondary text-center">@subTitle</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-            <!-- Cột 1: 3 giải pháp đầu -->
-            <div class="space-y-6">
+
+<div class="col-span-12" style="grid-column: span @colSpan / span @colSpan;">
+    <div class="vtl-block-adaptive py-16 px-4 md:px-10 border-none shadow-none bg-transparent dark:bg-transparent">
+        
+        @* 1. Header Section *@
+        <div class="max-w-3xl mx-auto text-center">
+            @if (!string.IsNullOrWhiteSpace(subTitle))
+            {
+                <span class="vtl-section-subtitle">@subTitle</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(title))
+            {
+                <h2 class="vtl-section-title">@title</h2>
+                <div class="vtl-section-divider"></div>
+            }
+        </div>
+
+        @* 2. Bố cục 3 cột: [Cards] - [Hero] - [Cards] *@
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mt-12">
+            
+            @* Cột trái: 3 giải pháp đầu *@
+            <div class="lg:col-span-4 space-y-6 order-2 lg:order-1">
                 @for (int i = 0; i < 3; i++)
                 {
-                    var item = solutions[i];
-                    var itemTitle = item.Value<string>("title");
-                    var itemDescription = item.Value<string>("description");
-                    var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url();
-                    <a href="@item.Url()">
-                        <div class="card shadow rounded-lg p-4 mt-4 hover:shadow-md transition">
-                            <div class="flex items-center gap-3 mb-2">
-                                @if (!string.IsNullOrEmpty(iconUrl))
-                                {
-                                    <img src="@iconUrl" alt="Icon @i" class="w-10 h-10 object-contain" />
-                                }
-                                <h3 class="text-lg font-semibold">@itemTitle</h3>
-                            </div>
-                            <p class="text-sm text-gray-600">@itemDescription</p>
-                        </div>
-                    </a>
+                    @renderSolutionCard(solutions[i])
                 }
             </div>
 
-            <!-- Cột 2: Hero Image + Mô tả (ẩn ảnh trên mobile) -->
-            <div class="flex flex-col items-center text-center">
-                <img src="@heroImageUrl" alt="Hero Image" class="w-40 h-40 object-contain mb-6 hidden1 md:block" />
-                <p class="text-gray-600 leading-relaxed">@Html.Raw(description)</p>
+            @* Cột giữa: Hero Image & Description *@
+            <div class="lg:col-span-4 flex flex-col items-center text-center order-1 lg:order-2 mb-10 lg:mb-0">
+                <div class="relative group mb-8">
+                    @* Vòng tròn trang trí sau ảnh *@
+                    <div class="absolute inset-0 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
+                    <img src="@heroImageUrl" alt="Hero" class="relative z-10 w-48 h-48 md:w-64 md:h-64 object-contain animate-fade-in" />
+                </div>
+                
+                @if (!string.IsNullOrWhiteSpace(description))
+                {
+                    <p class="text-gray-600 dark:text-gray-400 leading-relaxed max-w-sm mx-auto italic">
+                        @Html.Raw(description.Replace("\n", "<br />"))
+                    </p>
+                }
             </div>
 
-            <!-- Cột 3: 3 giải pháp còn lại -->
-            <div class="space-y-6">
+            @* Cột phải: 3 giải pháp còn lại *@
+            <div class="lg:col-span-4 space-y-6 order-3">
                 @for (int i = 3; i < 6; i++)
                 {
-                    var item = solutions[i];
-                    var itemTitle = item.Value<string>("title");
-                    var itemDescription = item.Value<string>("description");
-                    var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url();
-                    <a href="@item.Url()">
-                        <div class="card shadow rounded-lg p-4 mt-4 hover:shadow-md transition">
-                            <div class="flex items-center gap-3 mb-2">
-                                @if (!string.IsNullOrEmpty(iconUrl))
-                                {
-                                    <img src="@iconUrl" alt="Icon @i" class="w-10 h-10 object-contain" />
-                                }
-                                <h3 class="text-lg font-semibold">@itemTitle</h3>
-                            </div>
-                            <p class="text-sm text-gray-600">@itemDescription</p>
-                        </div>
-                    </a>
+                    @renderSolutionCard(solutions[i])
                 }
             </div>
+
         </div>
     </div>
 </div>
+
+@* Helper để render Card đồng nhất *@
+@{
+    IHtmlContent renderSolutionCard(IPublishedContent item)
+    {
+        var itemTitle = item.Value<string>("title") ?? item.Name;
+        var itemDescription = item.Value<string>("description");
+        var iconMedia = item.Value<IPublishedContent>("icon") 
+                        ?? item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault();
+        var iconUrl = iconMedia?.Url() ?? "/media/default/VTL_logo.svg";
+
+        return new HtmlString($@"
+            <a href='{item.Url()}' class='group block'>
+                <div class='vtl-block-adaptive p-5 border-transparent hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 transform group-hover:-translate-y-1'>
+                    <div class='flex items-start gap-4'>
+                        <div class='shrink-0 p-2 bg-gray-50 dark:bg-white/5 rounded-lg group-hover:bg-primary/10 transition-colors'>
+                            <img src='{iconUrl}' alt='icon' class='w-8 h-8 object-contain' />
+                        </div>
+                        <div>
+                            <h3 class='text-lg font-bold text-gray-900 dark:text-white group-hover:text-primary transition-colors mb-1'>{itemTitle}</h3>
+                            <p class='text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-snug'>{itemDescription}</p>
+                        </div>
+                    </div>
+                </div>
+            </a>");
+    }
+}

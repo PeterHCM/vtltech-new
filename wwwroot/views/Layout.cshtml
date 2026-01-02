@@ -2,26 +2,68 @@
 @using Umbraco.Extensions
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
-    Layout = null;    
+    Layout = null;
+    var path = Context.Request.Path.ToString().ToLower();
+    
+    // Gom nhóm các trang dùng giao diện tối giản
+    var isMinimalPage = path.Contains("/su-kien") || path.Contains("/events") || path.Contains("/landing");
+    
+    // Class cho Body để đồng bộ với hệ thống màu Dark/Light đã định nghĩa trong CSS
+    var bodyClasses = "flex flex-col min-h-screen antialiased bg-white text-gray-800 dark:bg-[#0a0a0b] dark:text-gray-100 transition-colors duration-300";
 }
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="scroll-smooth">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />    
-    @await Html.PartialAsync("Partials/Shared/Seo")    
-    <link rel="stylesheet" href="~/css/site.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+    
+    @* Google Fonts - Tối ưu font Inter *@
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    @await Html.PartialAsync("Partials/Shared/Seo", Model)
+    
+    @* CSS chính của hệ thống VTL *@
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="bg-white text-gray-800 dark:bg-dark dark:text-slogan font-sans">
-    @await Html.PartialAsync("Partials/Shared/Topbar")
-    @await Html.PartialAsync("Partials/Shared/Header")
-    <main class="pb-10">
+<body class="@bodyClasses">
+    @* 1. Topbar & Header: Ẩn trên các trang minimal hoặc khi in *@
+    @if (!isMinimalPage)
+    {
+        <header class="print:hidden">
+            @await Html.PartialAsync("Partials/Shared/Topbar")
+            @await Html.PartialAsync("Partials/Shared/Header")
+        </header>
+    }
+
+    @* 2. Main Content: Sử dụng vtl-container nếu muốn căn giữa toàn site *@
+    <main id="main-content" class="flex-grow"> 
         @RenderBody()
     </main>
-    @await Html.PartialAsync("Partials/Shared/Footer")
+
+    @* 3. Footer & Copyright: Sử dụng vtl-block-dark bên trong các partial này *@
+    @if (!isMinimalPage)
+    {
+        <footer class="print:hidden">
+            @await Html.PartialAsync("Partials/Shared/Footer")
+            @await Html.PartialAsync("Partials/Shared/Copyright")
+        </footer>
+    }
+
+    @* 4. Floating Elements *@
+    <aside class="print:hidden">
+        @await Html.PartialAsync("Partials/Shared/BackToTop")
+    </aside>
+
+    @* 5. Scripts: Load AlpineJS và site.js tối ưu *@
     <script src="~/Scripts/site.js" asp-append-version="true"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    
+    @* AlpineJS phục vụ cho các tương tác Menu, Dropdown *@
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

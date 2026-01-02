@@ -1,49 +1,49 @@
-@using Umbraco.Cms.Web.Common.PublishedModels
-@using Umbraco.Cms.Core.Models.Blocks
-@inherits UmbracoViewPage<Homepage>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
 
 @{
     Layout = "layout.cshtml";
 
-    var blocks = Model.Value<BlockListModel>("contentBlocks");
-
-    var blockViewMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-    {
-        { "heroBanner", "Partials/blocklist/heroBanner" },
-        { "textBlock", "Partials/blocklist/textBlock" },
-        { "ctaBlock", "Partials/blocklist/ctaBlock" },
-        { "featuredContentBlock", "Partials/blocklist/featuredContentBlock" },
-        { "documentControl", "Partials/blocklist/DocumentControl" },
-        { "linkList", "Partials/blocklist/linkList" }
-    };
-
-    var heroCarouselBlock = blocks?.FirstOrDefault(b => b.Content.ContentType.Alias == "heroCarousel");
+    var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
+    var fallbackPartial = "Partials/blockgrid/Default";
 }
 
-<!-- Hero Carousel Block (render riêng) -->
-@if (heroCarouselBlock != null)
+@if (blocks != null)
 {
-    @await Html.PartialAsync("Partials/blocklist/heroCarousel", heroCarouselBlock)
+    @* 1. Render Hero Block riêng biệt (Thường là Full-width) *@
+    var heroBlock = blocks.FirstOrDefault(b => b.Content.ContentType.Alias == "heroCarousel");
+    if (heroBlock != null)
+    {
+        var heroPartial = $"Partials/blockgrid/{heroBlock.Content.ContentType.Alias}";
+        @await Html.PartialAsync(heroPartial, heroBlock)
+    }
+
+    @* 2. Render các Content Blocks còn lại *@
+    var contentBlocks = blocks.Where(b => b.Content.ContentType.Alias != "heroCarousel");
+    if (contentBlocks.Any())
+    {
+        <div class="vtl-container">
+            @* Lưu ý: Không nên ép grid-cols-12 ở đây nếu các Block bên trong đã có Grid riêng.
+               Tôi để nó là một flex container hoặc stack đơn giản để đảm bảo tính thẩm mỹ của VTL.
+            *@
+            <div class="flex flex-col gap-16 md:gap-24">
+                @foreach (var block in contentBlocks)
+                {
+                    var alias = block.Content.ContentType.Alias;
+                    var partialPath = $"Partials/blockgrid/{alias}";
+                    
+                    // Kiểm tra sự tồn tại của Partial View
+                    var viewResult = viewEngine.FindView(ViewContext, partialPath, isMainPage: false);
+                    var partialToRender = viewResult.Success ? partialPath : fallbackPartial;
+
+                    @await Html.PartialAsync(partialToRender, block)
+                }
+            </div>
+        </div>
+    }
 }
 
-<!-- Các block còn lại -->
-<section class="homepage px-6 md:px-12 lg:px-24">
-    <div class="container">
-        @foreach (var block in blocks ?? Enumerable.Empty<BlockListItem>())
-        {
-            var alias = block.Content.ContentType.Alias;
-
-            // Bỏ qua heroCarousel vì đã render ở trên
-            if (alias == "heroCarousel") continue;
-
-            if (blockViewMap.TryGetValue(alias, out var partialPath))
-            {
-                @await Html.PartialAsync(partialPath, block)
-            }
-            else
-            {
-                <p class="text-red-500">Không tìm thấy view cho block: <strong>@alias</strong></p>
-            }
-        }
-    </div>
+@* 3. Section bổ trợ cuối trang *@
+<section class="py-8">
+    @await Html.PartialAsync("Partials/Shared/HappyClient", Model)
 </section>

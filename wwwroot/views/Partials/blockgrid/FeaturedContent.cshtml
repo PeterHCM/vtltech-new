@@ -7,87 +7,125 @@
     var description = content.Value<string>("description");
     var layout = content.Value<string>("layout")?.ToLowerInvariant() ?? "4";
     
-    // Gom nhóm logic hiển thị
     bool isCarousel = layout == "0";
     var items = content.Value<IEnumerable<IPublishedContent>>("links") ?? Enumerable.Empty<IPublishedContent>();
-    var hideClass = layout == "6" ? "hidden" : "";
-    var textClass = layout == "6" ? "text-xs sm:text-sm" : "";
-    var titleClass = layout == "6" ? "text-sm sm:text-base" : "text-base sm:text-lg";
-    // Class động
-    var blockClass = $"col-span-12 row-span-12 sm:col-span-{Model.ColumnSpan} sm:row-span-{Model.RowSpan}";
+    
+    // Hệ thống Grid linh hoạt - Phải dùng vtl-container để căn giữa
     var gridClass = layout switch {
-        "1" => "grid-cols-1 gap-8",
-        "3" => "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4",
-        "4" => "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4",
-        "6" => "grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2",
-        _   => "grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        "1" => "grid-cols-1 gap-10",
+        "3" => "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8",
+        "4" => "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6",
+        "6" => "grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4",
+        _   => "vtl-grid"
     };
 
-    var carouselId = isCarousel ? $"carousel-{Guid.NewGuid():N}" : null;
+    var carouselId = isCarousel ? $"vtl-carousel-{Guid.NewGuid():N}" : null;
 }
-<div class="@blockClass @(isCarousel ? "carousel-root" : "")" id="@carouselId">
-    <div class="block-wrapper">
-        @if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(subTitle) || !string.IsNullOrWhiteSpace(description))
-        {
-            <div class="block-header mb-6 text-center">
-                @if (!string.IsNullOrWhiteSpace(title)) { <h2 class="font-bold text-2xl">@title</h2> }
-                @if (!string.IsNullOrWhiteSpace(subTitle)) { <h4 class="text-secondary opacity-75">@subTitle</h4> }
-                @if (!string.IsNullOrWhiteSpace(description)) { <p class="mt-2">@description</p> }
-            </div>
-        }
 
-        @if (items.Any())
-        {
-            <div class="@(isCarousel ? "carousel-container relative overflow-hidden" : "")">
-                <div class="@(isCarousel ? "carousel-viewport overflow-hidden" : $"grid {gridClass} py-4")">
-                    <div class="@(isCarousel ? "carousel-track flex transition-transform duration-500 ease-out" : "contents")"
-                        style="@(isCarousel ? "display:flex; gap:16px; will-change:transform; transition:transform 0.5s ease;" : "")">
+<div class="vtl-block-adaptive col-span-12" id="@carouselId" style="grid-column: span @Model.ColumnSpan / span @Model.ColumnSpan;">
+    
+    @* 1. Header Section: Đồng bộ hóa Title & Subtitle *@
+    @if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(subTitle))
+    {
+        <div class="max-w-4xl mx-auto text-center mb-16 px-4">
+            @if (!string.IsNullOrWhiteSpace(subTitle)) { 
+                <span class="vtl-section-subtitle">@subTitle</span> 
+            }
+            @if (!string.IsNullOrWhiteSpace(title)) { 
+                <h2 class="vtl-section-title">@title</h2> 
+                <div class="vtl-section-divider"></div> 
+            }
+            @if (!string.IsNullOrWhiteSpace(description)) { 
+                <p class="text-gray-600 dark:text-gray-400 -mt-8">@description</p> 
+            }
+        </div>
+    }
+
+    @if (items.Any())
+    {
+        @* 2. Container chính: Chống tràn và định vị nút điều hướng *@
+        <div class="relative @(isCarousel ? "px-4 md:px-14" : "")">
+            
+            <div class="@(isCarousel ? "overflow-hidden" : $"grid {gridClass}")">
+                <div class="@(isCarousel ? "carousel-track" : "contents")">
+                    
+                    @foreach (var item in items)
+                    {
+                        var itemTitle = item.Value<string>("title") ?? item.Name;
+                        var itemDesc = item.Value<string>("description");
+                        var imgMedia = item.Value<IPublishedContent>("image") ?? item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault();
+                        var iconMedia = item.Value<IPublishedContent>("icon") ?? item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault();
                         
-                        @foreach (var item in items)
-                        {
-                            var itemTitle = item.Name;
-                            var itemDesc = item.Value<string>("description");
-                            var img = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault();
-                            var icon = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault();
-                            
-                            var imageUrl = img?.Url() ?? "/media/default/VTL_logo.svg";
-                            if (img != null && !imageUrl.EndsWith(".svg")) imageUrl += "?width=400&format=webp";
-                            
-                            var iconUrl = icon?.Url() ?? "/media/default/VTL_logo.svg";
-                            <div class="@(isCarousel ? "carousel-slide" : "card group")" 
-                                 style="@(isCarousel ? "flex:0 0 calc((100% - 3*16px)/4);" : "")">
-                                <a href="@item.Url()" class="card block h-full border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                                    <div class="relative aspect-video overflow-hidden bg-gray-100">
-                                        <img src="@imageUrl" alt="@itemTitle" class="card-image" loading="lazy" />
+                        var imageUrl = imgMedia != null ? imgMedia.GetCropUrl(600, 400) : "/media/default/VTL_logo.svg";
+                        var iconUrl = iconMedia?.Url() ?? "/media/default/VTL_logo.svg";
+                        
+                        <div class="@(isCarousel ? "carousel-slide" : "h-full")">
+                            @* Thẻ Link bao toàn bộ, dùng group để kích hoạt hiệu ứng hover cho các con *@
+                            <a href="@item.Url()" class="group block h-full">
+                                <div class="vtl-card h-full flex flex-col overflow-hidden">
+                                    
+                                    @* Media: Phải có 'relative' để logo bám đúng vị trí *@
+                                    <div class="vtl-media-ratio relative shrink-0 overflow-hidden">
+                                        <img src="@imageUrl" alt="@itemTitle" class="vtl-img-zoom w-full h-full object-cover" loading="lazy" />
+                                        
+                                        @* Logo nổi trên ảnh (Chỉ hiện nếu không phải layout 6) *@
+                                        @if (layout != "6") {
+                                            <div class="absolute top-4 left-4 z-20">
+                                                <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md p-1.5 rounded-xl shadow-lg border border-white/20">
+                                                    <img src="@iconUrl" class="w-7 h-7 md:w-9 md:h-9 object-contain block" alt="icon" />
+                                                </div>
+                                            </div>
+                                        }
+                                        
+                                        @* Overlay mờ khi hover *@
+                                        <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                     </div>
-                                    <div class="p-4">
-                                        <div class="flex items-center gap-2 mb-2">
-                                            @if (layout != "6") { <img src="@iconUrl" class="w-5 h-5 object-contain" alt="icon" /> }
-                                            <h3 class="font-semibold line-clamp-2 @titleClass">@itemTitle</h3>
+
+                                    @* Nội dung văn bản *@
+                                    <div class="p-6 md:p-8 flex flex-col flex-grow bg-white dark:bg-transparent">
+                                        <h3 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white group-hover:text-primary transition-colors mb-3 line-clamp-2">
+                                            @itemTitle
+                                        </h3>
+                                        
+                                        @* Flex-grow đẩy Footer xuống đáy *@
+                                        <div class="flex-grow">
+                                            <p class="text-sm md:text-base text-gray-600 dark:text-gray-400 line-clamp-3 leading-relaxed">
+                                                @itemDesc
+                                            </p>
                                         </div>
-                                        @if (!string.IsNullOrWhiteSpace(itemDesc)) {
-                                            <p class="text-sm line-clamp-3 opacity-80" title="@itemDesc">@itemDesc</p>
+
+                                        @* Footer của Card *@
+                                        @if (layout != "6") {
+                                            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between">
+                                                <span class="vtl-link font-bold text-xs uppercase tracking-widest">Chi tiết</span>
+                                                <svg class="w-5 h-5 text-primary transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                                </svg>
+                                            </div>
                                         }
                                     </div>
-                                </a>
-                            </div>
-                        }
-                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
                 </div>
-
-                @if (isCarousel)
-                {
-                    <button class="carousel-prev absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                    <button class="carousel-next absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:bg-white">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                }
             </div>
-        }
-    </div>
+
+            @* 3. Điều hướng Carousel *@
+            @if (isCarousel)
+            {
+                <button class="carousel-prev absolute left-0 top-1/2 -translate-y-1/2 z-30 w-11 h-11 flex items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-white/10 opacity-0 group-hover/carousel:opacity-100 transition-all hover:bg-primary hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button class="carousel-next absolute right-0 top-1/2 -translate-y-1/2 z-30 w-11 h-11 flex items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-white/10 opacity-0 group-hover/carousel:opacity-100 transition-all hover:bg-primary hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            }
+        </div>
+    }
 </div>
+
+@* JS Logic cho Carousel *@
 @if (isCarousel)
 {
     <script>
@@ -104,17 +142,18 @@
                 const max = Math.max(0, slides.length - spv);
                 index = Math.max(0, Math.min(index, max));
                 
-                // Tính toán chính xác khoảng cách trượt
-                const gap = 16; 
                 const slideWidth = slides[0].offsetWidth;
+                const gap = 32; // gap-8 = 32px
                 track.style.transform = `translateX(-${index * (slideWidth + gap)}px)`;
                 
-                prev.style.display = index === 0 ? "none" : "block";
-                next.style.display = index === max ? "none" : "block";
+                prev.style.opacity = index === 0 ? "0" : "1";
+                prev.style.pointerEvents = index === 0 ? "none" : "auto";
+                next.style.opacity = index === max ? "0" : "1";
+                next.style.pointerEvents = index === max ? "none" : "auto";
             };
 
-            next.onclick = () => { index++; update(); };
-            prev.onclick = () => { index--; update(); };
+            next.onclick = (e) => { e.preventDefault(); index++; update(); };
+            prev.onclick = (e) => { e.preventDefault(); index--; update(); };
             window.addEventListener("resize", update);
             update();
         });

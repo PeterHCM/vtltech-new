@@ -4,42 +4,95 @@
 @model IEnumerable<IPublishedContent>
 
 @{
-    var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
+    var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "XEM THÔNG SỐ";
 }
 
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 py-4">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
     @foreach (var item in Model)
     {
         var title = item.Value<string>("title") ?? item.Name;
-        var description = item.Value<string>("description");
-        var originalImageUrl = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
-        var isSvg = originalImageUrl?.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ?? false;
-        var imageUrl = originalImageUrl != null
-            ? (isSvg ? originalImageUrl : $"{originalImageUrl}?width=400&quality=80&format=webp")
-            : "/media/default/VTL_logo.svg";
-        var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url() ?? "/media/default/VTL_logo.svg";
+        var description = item.Value<string>("description") ?? "";
         
-        <div class="group card hover:shadow-2xl hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 relative">
-            <!-- Logo -->
-            <div class="p-4 flex justify-center">
-                <img src="@iconUrl" alt="@title" class="w-auto h-6 object-contain" />
-            </div>
+        var imageMedia = item.Value<IPublishedContent>("image") 
+                         ?? item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault();
+        
+        var iconMedia = item.Value<IPublishedContent>("icon") 
+                        ?? item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault();
+        
+        var imageUrl = imageMedia != null ? imageMedia.GetCropUrl(600, 400) : "/media/default/VTL_thumb.jpg";
+        var iconUrl = iconMedia != null ? iconMedia.Url() : "/media/default/VTL_logo.svg";
+        
+        <div class="group relative flex flex-col h-full bg-white dark:bg-[#0a0a0b] border border-slate-200 dark:border-white/5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-1">
+            
+            @* 1. Media Container: Thiết kế kiểu "Ống kính máy ảnh" *@
+            <div class="relative aspect-[16/9] overflow-hidden shrink-0">
+                <img src="@imageUrl" alt="@title" class="w-full h-full object-cover grayscale-[40%] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" loading="lazy" />
+                
+                @* Lớp phủ lưới (Grid) mờ đặc trưng kỹ thuật *@
+                <div class="absolute inset-0 opacity-20 pointer-events-none" 
+                     style="background-image: linear-gradient(#ffffff10 1px, transparent 1px), linear-gradient(90deg, #ffffff10 1px, transparent 1px); background-size: 20px 20px;"></div>
+                
+                @* Hiệu ứng tia quét xanh (Scanner) chạy liên tục khi hover *@
+                <div class="absolute inset-x-0 top-0 h-[2px] bg-primary shadow-[0_0_10px_#3b82f6] z-30 opacity-0 group-hover:opacity-100 group-hover:animate-vtl-scan"></div>
 
-            <!-- Hình ảnh minh họa -->
-            <div class="aspect-video overflow-hidden relative">
-                <img src="@imageUrl" alt="@title"
-                     class="card-image" />
-                <div class="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </div>
+                @* LOGO BOX: Thiết kế kiểu Module kỹ thuật *@
+                @if (iconMedia != null)
+                {
+                    <div class="absolute bottom-4 left-4 z-20">
+                        <div class="bg-white/95 dark:bg-[#121214]/95 backdrop-blur-md p-2 border border-white/20 shadow-lg">
+                            <img src="@iconUrl" alt="icon" class="w-8 h-8 md:w-10 md:h-10 object-contain block dark:brightness-125" />
+                        </div>
+                    </div>
+                }
 
-            <!-- Nội dung -->
-            <div class="card-body">
-                <h3>@title</h3>
-                <p class="line-clamp-3" title="@description">@description</p>
-                <div class="mt-4 text-right hidden group-hover:flex transition-all duration-300">
-                    <a href="@item.Url()" target="_blank" class="text-primary hover:text-secondary text-sm">@viewMoreText</a>
+                @* Nhãn trạng thái góc phải *@
+                <div class="absolute top-4 right-4 bg-primary/90 px-2 py-1 z-20">
+                    <span class="text-[8px] font-mono text-white uppercase tracking-tighter">Verified_0@(item.Id % 10)</span>
                 </div>
             </div>
+
+            @* 2. Content Container: Phẳng và Hiện đại *@
+            <div class="p-6 flex flex-col flex-grow relative border-x border-b border-transparent group-hover:border-primary/20 transition-colors">
+                
+                @* Tiêu đề font dày, dãn chữ hẹp đặc trưng Tech *@
+                <h3 class="text-lg md:text-xl font-black mb-3 line-clamp-1 text-slate-900 dark:text-white group-hover:text-primary transition-colors tracking-tighter uppercase">
+                    @title
+                </h3>
+                
+                @* Description với font-medium để rõ ràng *@
+                <div class="flex-grow">
+                    <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed font-medium">
+                        @description
+                    </p>
+                </div>
+
+                @* 3. Action Footer: Tối giản kiểu Industrial *@
+                <div class="mt-6 pt-4 border-t border-slate-100 dark:border-white/5">
+                    <a href="@item.Url()" class="flex items-center justify-between group/link">
+                        <span class="text-[11px] font-black uppercase tracking-[0.2em] text-primary">@viewMoreText</span>
+                        <div class="flex items-center">
+                            <span class="w-8 h-[1px] bg-primary/30 group-hover/link:w-12 transition-all duration-300"></span>
+                            <svg class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            @* Họa tiết 4 góc chỉ xuất hiện khi hover (Corner Marks) *@
+            <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
         </div>
     }
 </div>
+
+<style>
+    @@keyframes vtl-scan {
+        0% { top: 0%; }
+        100% { top: 100%; }
+    }
+    .animate-vtl-scan {
+        animation: vtl-scan 2s linear infinite;
+    }
+</style>

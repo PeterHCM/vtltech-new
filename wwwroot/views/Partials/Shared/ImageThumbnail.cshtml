@@ -2,73 +2,68 @@
 @using Umbraco.Cms.Core.Models.PublishedContent
 @model IEnumerable<IPublishedContent>
 
-@{
-    var keyShort = ViewData["KeyShort"]?.ToString() ?? Guid.NewGuid().ToString("N")[..8];
-    var mainImage = Model?.FirstOrDefault();
-    var mainImageKey = $"main-image-{keyShort}";
-}
-
 @if (Model?.Any() == true)
 {
-    <div class="space-y-4">
-        <!-- 1. Hình lớn -->
-        @if (mainImage != null)
-        {
-            <div class="aspect-video overflow-hidden rounded-lg relative">
-                <img id="@mainImageKey"
-                     src="@mainImage.Url()"
-                     alt="@mainImage.Name"
-                     class="w-full h-full object-cover transition-opacity duration-300"
-                     loading="lazy" />
-            </div>
-        }
+    var images = Model.ToList();
 
-        <!-- 2. Lưới ảnh nhỏ -->
-        <div id="thumbnail-@keyShort" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-            @foreach (var (img, index) in Model.Select((item, i) => (item, i)))
-            {
-                var isActive = index == 0 ? "border-primary" : "border-transparent";
-                <div class="aspect-square overflow-hidden rounded-lg group relative cursor-pointer border-2 thumbnail-item @isActive"
-                     data-image-url="@img.Url()"
-                     aria-label="View @img.Name">
-                    <img src="@img.Url()" alt="@img.Name"
-                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 dark:group-hover:brightness-110"
-                         loading="lazy" />
-                </div>
-            }
+    <div
+        x-data="{
+            active: 0,
+            images: [
+                @foreach (var img in images)
+                {
+                    <text>
+                        {
+                            url: '@img.Url()',
+                            name: '@img.Name'
+                        }@(img != images.Last() ? "," : "")
+                    </text>
+                }
+            ]
+        }"
+        class="space-y-4">
+
+        <div class="aspect-video overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] relative bg-gray-100 dark:bg-gray-800 shadow-xl ring-1 ring-black/5">
+            <img
+                :key="active"
+                :src="images[active].url"
+                :alt="images[active].name"
+                class="w-full h-full object-cover"
+                x-transition:enter="transition ease-out duration-500"
+                x-transition:enter-start="opacity-0 scale-105"
+                x-transition:enter-end="opacity-100 scale-100"
+                loading="lazy" />
+            
+            @* Tag số lượng ảnh góc phải - màu Brand Xanh *@
+            <div class="absolute bottom-4 right-6 bg-[#006361]/80 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+                <span x-text="active + 1"></span> / @images.Count
+            </div>
         </div>
 
-        <!-- 3. JavaScript -->
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const key = "@keyShort";
-                const mainImage = document.getElementById("main-image-" + key);
-                const thumbnails = document.querySelectorAll(`#thumbnail-${key} .thumbnail-item`);
-                if (!mainImage || thumbnails.length === 0) return;
+        <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
+            <template x-for="(img, index) in images" :key="index">
+                <div
+                    @@click="active = index"
+                    :class="active === index 
+                        ? 'border-[#e06800] ring-4 ring-[#e06800]/20' 
+                        : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-200'"
+                    class="aspect-square overflow-hidden rounded-2xl cursor-pointer border-2 transition-all duration-300 bg-white dark:bg-gray-900 shadow-sm">
 
-                let activeThumb = thumbnails[0];
-
-                thumbnails.forEach(thumb => {
-                    thumb.addEventListener('click', () => {
-                        const newUrl = thumb.dataset.imageUrl;
-                        mainImage.style.opacity = '0';
-                        setTimeout(() => {
-                            mainImage.src = newUrl;
-                            mainImage.style.opacity = '1';
-                        }, 100);
-
-                        activeThumb?.classList.remove('border-primary');
-                        activeThumb?.classList.add('border-transparent');
-                        thumb.classList.add('border-primary');
-                        thumb.classList.remove('border-transparent');
-                        activeThumb = thumb;
-                    });
-                });
-            });
-        </script>
+                    <img
+                        :src="img.url"
+                        :alt="img.name"
+                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy" />
+                </div>
+            </template>
+        </div>
     </div>
 }
 else
 {
-    <p class="text-red-400 dark:text-red-300 opacity-50">Không có ảnh nào được chọn cho layout Thumbnail Gallery.</p>
+    <div class="py-8 text-center rounded-[2rem] border-2 border-dashed border-gray-100 dark:border-gray-800">
+        <p class="text-sm text-gray-400 italic">
+            Chưa có hình ảnh nào được tải lên.
+        </p>
+    </div>
 }

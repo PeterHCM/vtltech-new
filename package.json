@@ -1,26 +1,15 @@
 {
-  "name": "vtltech.com.vn-2025",
-  "version": "1.0.0",
+  "name": "vtltech.com.vn-2026",
+  "version": "1.0.1",
   "description": "Dự án Umbraco tích hợp TailwindCSS và cá nhân hóa giao diện",
-  "main": "index.js",
   "scripts": {
     "dev": "tailwindcss -i ./wwwroot/css/tailwind.css -o ./wwwroot/css/site.css --watch",
-    "build": "tailwindcss -i ./wwwroot/css/tailwind.css -o ./wwwroot/css/site.css --minify",
-    "deploy": "git checkout main && git pull origin main && npm run build && git add . && git commit -m \"HeroCarousel+ImageBlock\" && git push origin main"
+    "build": "tailwindcss -i ./wwwroot/css/tailwind.css -o ./wwwroot/css/site.css --minify"
   },
-  "keywords": [
-    "umbraco",
-    "tailwindcss",
-    "vtltech",
-    "website",
-    "2025"
-  ],
-  "author": "VTL Tech Team",
+  "author": "VTL Tech",
   "license": "MIT",
   "devDependencies": {
-    "tailwindcss": "^3.4.4"
-  },
-  "dependencies": {
+    "tailwindcss": "^3.4.4",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/typography": "^0.5.19"
   }

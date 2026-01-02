@@ -1,65 +1,77 @@
-@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<BlockGridItem>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
 @using Umbraco.Cms.Core.Models.Blocks
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Extensions
-@using Umbraco.Cms.Core.Models.PublishedContent
-@using System.Linq
 
-<section class="pb-10">
 @{
-    var content = Model.Content;
+    var content = Model?.Content;
+    if (content == null) return;
+
     var banners = content.Value<BlockListModel>("banners");
-    var bannerKey = content.Key.ToString("N").Substring(0, 8);
+    if (banners == null || !banners.Any()) return;
+
+    // Tạo ID duy nhất để không bao giờ xung đột JS
+    var bannerKey = "hero_" + content.Key.ToString("N").Substring(0, 8);
 }
-@if (banners != null && banners.Any())
-{
-    var totalSlides = banners.Count();
-    <div id="carousel-@bannerKey"
-         class="relative overflow-hidden group"
-         data-carousel-key="@bannerKey"
-         data-total-slides="@totalSlides">
-        <div class="carousel-track flex transition-transform duration-700 ease-in-out">
+
+<section class="relative w-full overflow-hidden bg-[#0a0a0b] vtl-hero-section">
+    <div id="@bannerKey" 
+         class="relative group hero-carousel-root" 
+         data-total-slides="@banners.Count()">
+        
+        @* Đổi tên class thành hero-track để tách biệt hoàn toàn *@
+        <div class="hero-track flex transition-transform duration-[1000ms] ease-[cubic-bezier(0.4,0,0.2,1)]">
             @foreach (var banner in banners)
             {
                 var b = banner.Content;
-                var heading = b.Value<string>("heading");
-                var subtitle = b.Value<string>("subtitle");
-                var ctaLinks = b.Value<IEnumerable<Link>>("ctaLinks");
-                var images = b.Value<IEnumerable<MediaWithCrops>>("images");
-                var image = images?.FirstOrDefault();
-                var icons = b.Value<IEnumerable<MediaWithCrops>>("icons");
-                var icon = icons?.FirstOrDefault();
-                <div class="carousel-slide w-full flex-shrink-0 relative">
-                    <div class="hero-slide relative flex flex-col items-center justify-center text-center px-6 sm:px-12 overflow-hidden h-[500px] bg-black">
-                        @if (image != null)
-                        {
-                            <div class="absolute inset-0 z-[-1]">
-                                <img src="@image.Url()" alt="@heading"
-                                     class="w-full h-full object-cover" loading="lazy" />
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                            </div>
-                        }
+                if (b == null) continue;
 
-                        <div class="relative z-10 max-w-3xl py-12 sm:py-0 flex flex-col items-center justify-center text-center">
+                var heading = b.Value<string>("heading") ?? "";
+                var subtitle = b.Value<string>("subtitle") ?? "";
+                var ctaLinks = b.Value<IEnumerable<Link>>("ctaLinks") ?? Enumerable.Empty<Link>();
+                var image = b.Value<IPublishedContent>("images") ?? b.Value<IEnumerable<IPublishedContent>>("images")?.FirstOrDefault();
+                var icon = b.Value<IPublishedContent>("icons") ?? b.Value<IEnumerable<IPublishedContent>>("icons")?.FirstOrDefault();
+                var isFirst = banner == banners.First();
+
+                <div class="hero-slide w-full flex-shrink-0 relative h-[550px] md:h-[700px] lg:h-[850px] bg-black overflow-hidden">
+                    @if (image != null)
+                    {
+                        <div class="absolute inset-0 z-0">
+                            <img src="@(image.Url())?width=1920&quality=85&format=webp" 
+                                 alt="@heading"
+                                 class="hero-img w-full h-full object-cover transition-transform duration-[8000ms] ease-out scale-100" 
+                                 loading="@(isFirst ? "eager" : "lazy")" />
+                            @* Overlay đa tầng giúp text nổi bật hơn *@
+                            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent"></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0b] via-transparent to-transparent"></div>
+                        </div>
+                    }
+
+                    <div class="vtl-container relative z-10 h-full flex items-center">
+                        <div class="max-w-3xl px-4 text-left"> @* Đổi về căn trái cho chuyên nghiệp giống website Tech *@
                             @if (icon != null)
                             {
-                                <img src="@icon.Url()" alt="@icon.Name()" class="h-20 w-auto mb-6 mx-auto" loading="lazy" />
+                                <img src="@icon.Url()" class="h-12 md:h-16 mb-8 object-contain animate-fade-in" alt="icon" />
                             }
+                            
                             @if (!string.IsNullOrEmpty(heading))
                             {
-                                <h2 class="text-2xl sm:text-5xl font-bold text-white mb-4 leading-tight">@heading</h2>
+                                <h2 class="text-4xl md:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight">@heading</h2>
                             }
+                            
                             @if (!string.IsNullOrEmpty(subtitle))
                             {
-                                <p class="text-base sm:text-xl text-white/90 mb-6">@subtitle</p>
+                                <p class="text-lg md:text-2xl text-gray-300 mb-12 max-w-2xl leading-relaxed">@subtitle</p>
                             }
-                            @if (ctaLinks != null && ctaLinks.Any())
+
+                            @if (ctaLinks.Any())
                             {
-                                <div class="flex flex-wrap justify-center gap-4">
+                                <div class="flex flex-wrap gap-5">
                                     @foreach (var link in ctaLinks)
                                     {
-                                        <a href="@link.Url" target="@link.Target" rel="noopener"
-                                           class="bg-primary text-white hover:bg-secondary font-semibold px-5 py-3 rounded transition duration-200">
+                                        var isFirstBtn = link == ctaLinks.First();
+                                        <a href="@link.Url" target="@link.Target" 
+                                           class="vtl-btn @(isFirstBtn ? "vtl-btn-primary scale-110" : "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20") py-4 px-8 text-base">
                                             @link.Name
                                         </a>
                                     }
@@ -71,76 +83,91 @@
             }
         </div>
 
-        <!-- Navigation -->
-        <button data-action="prev" data-target="@bannerKey"
-                class="swiper-button-prev absolute left-4 top-1/2 transform -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full"
-                aria-label="Previous slide">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
+        @* Navigation Buttons: Chỉ hiện khi hover *@
+        <button data-action="prev" class="absolute left-6 top-1/2 -translate-y-1/2 z-30 p-4 rounded-full bg-white/5 hover:bg-primary text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-lg border border-white/10 shadow-2xl">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <button data-action="next" data-target="@bannerKey"
-                class="swiper-button-next absolute right-4 top-1/2 transform -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full"
-                aria-label="Next slide">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
+        <button data-action="next" class="absolute right-6 top-1/2 -translate-y-1/2 z-30 p-4 rounded-full bg-white/5 hover:bg-primary text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-lg border border-white/10 shadow-2xl">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+
+        @* Dots Progress Bar *@
+        <div class="absolute bottom-12 left-1/2 -translate-x-1/2 z-30 flex gap-4">
+            @for (int i = 0; i < banners.Count(); i++)
+            {
+                <button data-go-to="@i" class="hero-dot w-12 h-1 rounded-full bg-white/20 overflow-hidden transition-all duration-300">
+                    <div class="hero-progress h-full bg-primary w-0"></div>
+                </button>
+            }
+        </div>
     </div>
-}
 </section>
 
+<style>
+    /* Style riêng cho Hero để không dính tới component khác */
+    .hero-track { display: flex; width: 100%; }
+    .hero-dot.is-active { background-color: rgba(255,255,255,0.4); }
+    .hero-dot.is-active .hero-progress { 
+        width: 100%; 
+        transition: width 6s linear; 
+    }
+    .hero-slide.is-active .hero-img {
+        transform: scale(1.15); /* Hiệu ứng Ken Burns zoom nhẹ cực sang */
+    }
+</style>
+
 <script>
-function initializeAllCarousels() {
-    document.querySelectorAll('[data-carousel-key]').forEach(carousel => {
-        const key = carousel.dataset.carouselKey;
-        const totalSlides = parseInt(carousel.dataset.totalSlides);
-        const track = carousel.querySelector('.carousel-track');
-        const slides = carousel.querySelectorAll('.carousel-slide');
-        let currentIndex = 0;
-        let slideInterval;
-        const intervalTime = 5000;
+    (function() {
+        const id = '@bannerKey';
+        const root = document.getElementById(id);
+        if (!root) return;
 
-        function goToSlide(index) {
-            if (index < 0) index = totalSlides - 1;
-            if (index >= totalSlides) index = 0;
-            currentIndex = index;
-            track.style.transform = `translateX(-${index * 100}%)`;
+        const track = root.querySelector('.hero-track');
+        const slides = root.querySelectorAll('.hero-slide');
+        const dots = root.querySelectorAll('.hero-dot');
+        const total = parseInt(root.dataset.totalSlides);
+        let current = 0;
+        let timer;
 
-            carousel.querySelectorAll(".zoom-target").forEach(img => img.classList.remove("scale-[1.1]"));
-            const active = slides[index].querySelector(".zoom-target");
-            if (active) active.classList.add("scale-[1.1]");
-        }
-
-        function startAutoSlide() {
-            clearInterval(slideInterval);
-            if (totalSlides > 1) {
-                slideInterval = setInterval(() => {
-                    goToSlide(currentIndex + 1);
-                }, intervalTime);
-            }
-        }
-
-        function stopAutoSlide() {
-            clearInterval(slideInterval);
-        }
-
-        carousel.addEventListener('mouseenter', stopAutoSlide);
-        carousel.addEventListener('mouseleave', startAutoSlide);
-
-        carousel.querySelectorAll('button[data-action]').forEach(button => {
-            button.addEventListener('click', () => {
-                stopAutoSlide();
-                const action = button.dataset.action;
-                goToSlide(action === 'next' ? currentIndex + 1 : currentIndex - 1);
-                setTimeout(startAutoSlide, 500);
+        function update(index) {
+            current = (index + total) % total;
+            track.style.transform = `translateX(-${current * 100}%)`;
+            
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('is-active', i === current);
+                const progress = dot.querySelector('.hero-progress');
+                if (progress) progress.style.width = i === current ? '100%' : '0';
             });
+
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('is-active', i === current);
+            });
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            // Reset progress bar ngay lập tức trước khi chạy timer mới
+            const activeProgress = dots[current].querySelector('.hero-progress');
+            if(activeProgress) {
+                activeProgress.style.transition = 'none';
+                activeProgress.style.width = '0';
+                setTimeout(() => {
+                    activeProgress.style.transition = 'width 6s linear';
+                    activeProgress.style.width = '100%';
+                }, 10);
+            }
+            timer = setInterval(() => update(current + 1), 6000);
+        }
+
+        root.querySelector('[data-action="prev"]').onclick = () => { update(current - 1); startTimer(); };
+        root.querySelector('[data-action="next"]').onclick = () => { update(current + 1); startTimer(); };
+        
+        dots.forEach((dot, i) => {
+            dot.onclick = () => { update(i); startTimer(); };
         });
 
-        goToSlide(0);
-        startAutoSlide();
-    });
-}
-
-document.addEventListener('DOMContentLoaded', initializeAllCarousels);
+        // Khởi tạo
+        update(0);
+        startTimer();
+    })();
 </script>

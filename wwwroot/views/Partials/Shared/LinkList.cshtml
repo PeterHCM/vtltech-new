@@ -2,9 +2,10 @@
 @using Microsoft.AspNetCore.Html
 @{
     var defaultFileType = ViewData["fileType"] as string;
+
     string GetFileType(string url, string defaultType)
     {
-        if (!string.IsNullOrWhiteSpace(defaultType))
+        if (!string.IsNullOrWhiteSpace(defaultType) && defaultType != "link") // Ưu tiên defaultType trừ khi nó là link chung chung
         {
             return defaultType.ToLowerInvariant();
         }
@@ -14,83 +15,64 @@
         return extension switch
         {
             "pdf" => "pdf",
-            "doc" or "docx" or "word"=> "doc",
-            "xls" or "xlsx" => "excel",
+            "doc" or "docx" or "word" => "doc",
+            "xls" or "xlsx" or "csv" => "excel",
             "ppt" or "pptx" => "powerpoint",
             "zip" or "rar" or "7z" => "archive",
-            "arrowRight" => "arrowright",
-            _ => "link" // Mặc định là link
+            _ => "link"
         };
     }
-    var PdfIcon = new HtmlString(
-    @"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-red-600 flex-shrink-0"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
-        <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M12 6v6l4 2m4 2V8l-6-6H6a2 2 0 00-2 2v14a2 2 0 002 2h10"" />
-    </svg>"
-    );
-    var DocIcon = new HtmlString(
-    @"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-blue-600 flex-shrink-0"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
-        <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M7 3h8l4 4v12a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"" />
-    </svg>"
-    );
-    var ExcelIcon = new HtmlString(
-    @"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-green-600 flex-shrink-0"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
-        <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M3 8h18M3 12h18M3 16h18M9 8v12M15 8v12"" />
-    </svg>"
-    );
-    var PowerpointIcon = new HtmlString(
-    @"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-orange-600 flex-shrink-0"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
-        <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M13 3a9 9 0 100 18v-6a3 3 0 100-6V3z"" />
-    </svg>"
-    );
-    var ArchiveIcon = new HtmlString(
-    @"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 text-yellow-600 flex-shrink-0"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
-        <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M3 7h18M5 7v10a2 2 0 002 2h10a2 2 0 002-2V7M9 11h6"" />
-    </svg>"
-    );
-    var arrowRightIcon = new HtmlString(
-    @"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 flex-shrink-0"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
-        <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M9 5l7 7-7 7"" />
-    </svg>"
-    );
-    var LinkIcon = new HtmlString(
-        $@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-4 h-4 flex-shrink-0"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
-            <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.881a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"" />
-        </svg>"
-    );
+
+    // Tối ưu SVG: Thêm các class Tailwind đồng nhất
+    var PdfIcon = new HtmlString(@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-5 h-5 text-red-500"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2""><path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"" /><path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M9 9h1v1H9V9z"" /></svg>");
+    var DocIcon = new HtmlString(@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-5 h-5 text-blue-500"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2""><path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"" /></svg>");
+    var ExcelIcon = new HtmlString(@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-5 h-5 text-green-600"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2""><path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M9 17v-2m3 2v-4m3 2v-6m-8-5.125c.483-.316 1.004-.622 1.559-.919a9.303 9.303 0 013.09-.914c.553-.06 1.109-.08 1.664-.061a9.297 9.297 0 013.042.825 9.3 9.3 0 012.571 1.76l-2.734 2.734a4.653 4.653 0 00-1.285-.88 4.646 4.646 0 00-1.521-.412 4.655 4.655 0 00-1.637.041 4.65 4.65 0 00-1.545.457 4.652 4.652 0 00-1.123.755L5.125 7.75z"" /></svg>");
+    var arrowRightIcon = new HtmlString(@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-5 h-5 text-primary"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2.5""><path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M13 7l5 5m0 0l-5 5m5-5H6"" /></svg>");
+    var LinkIcon = new HtmlString(@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-5 h-5 text-gray-400"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2""><path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.881a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"" /></svg>");
+
     Func<string, IHtmlContent> GetIcon = (type) => type switch
     {
         "pdf" => PdfIcon,
-        "doc" or "word"=> DocIcon,
+        "doc" => DocIcon,
         "excel" => ExcelIcon,
-        "powerpoint" => PowerpointIcon,
-        "archive" => ArchiveIcon,
         "arrowright" => arrowRightIcon,
         _ => LinkIcon
     };
-    var TargetIcon = new HtmlString(
-        $@"<svg xmlns=""http://www.w3.org/2000/svg"" class=""w-3 h-3 ml-1"" fill=""none"" viewBox=""0 0 24 24"" stroke=""currentColor"" stroke-width=""2"">
-            <path stroke-linecap=""round"" stroke-linejoin=""round"" d=""M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"" />
-        </svg>"
-    );
 }
-<ul class="space-y-3 mt-6">
+
+<ul class="grid grid-cols-1 gap-3 mt-6">
     @foreach (var link in Model)
     {
-        var url = link.Url;
-        var name = link.Name;
-        var target = link.Target;
-        var type = GetFileType(url, defaultFileType);
-        <li class="flex items-center gap-2">
-            <a href="@url"
-            target="@target"
-            rel="@(target == "_blank" ? "noopener noreferrer" : null)"
-            class="flex items-center gap-2 hover:text-primary transition-colors truncate">
-                @GetIcon(type)
-                <span class="truncate">@name</span>
-                @if (target == "_blank")
-                {
-                    @TargetIcon
-                }
+        var type = GetFileType(link.Url, defaultFileType);
+        
+        <li class="group/item">
+            <a href="@link.Url"
+               target="@link.Target"
+               rel="@(link.Target == "_blank" ? "noopener noreferrer" : null)"
+               class="flex items-center p-3 rounded-xl border border-transparent bg-gray-50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 hover:border-primary/30 hover:shadow-md transition-all duration-300">
+                
+                @* Icon container với hiệu ứng nhẹ *@
+                <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-gray-800 shadow-sm group-hover/item:scale-110 transition-transform duration-300">
+                    @GetIcon(type)
+                </div>
+
+                <div class="ml-4 flex-grow overflow-hidden">
+                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-200 group-hover/item:text-primary transition-colors truncate">
+                        @link.Name
+                    </span>
+                    @if (link.Target == "_blank")
+                    {
+                        <span class="text-[10px] uppercase tracking-wider text-gray-400 flex items-center mt-0.5">
+                            Mở tab mới
+                            <svg class="w-2.5 h-2.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        </span>
+                    }
+                </div>
+
+                @* Mũi tên chỉ hướng nhỏ ở cuối *@
+                <div class="ml-2 opacity-0 -translate-x-2 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-300">
+                    <svg class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7" /></svg>
+                </div>
             </a>
         </li>
     }

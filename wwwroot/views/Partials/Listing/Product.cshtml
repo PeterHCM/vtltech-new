@@ -4,69 +4,100 @@
 @model IEnumerable<IPublishedContent>
 
 @{
-    var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết →";
+    var viewMoreText = Umbraco?.GetDictionaryValue("viewMoreText") ?? "Xem chi tiết";
 }
 
-<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-    @foreach (var item in Model)
-    {
-        var title = item.Name;
-        var description = item.Value<string>("description");
-        var originalImageUrl = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault()?.Url();
-        var isSvg = originalImageUrl?.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ?? false;
-        var imageUrl = originalImageUrl != null
-            ? (isSvg ? originalImageUrl : $"{originalImageUrl}?width=400&quality=80&format=webp")
-            : "/media/default/VTL_logo.svg";
-        var iconUrl = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault()?.Url() ?? "/media/default/VTL_logo.svg";
-        <article class="card">
-            <a href="@item.Url()" class="group block h-full">
-                @* Hình ảnh chính *@
-                @if (!string.IsNullOrEmpty(imageUrl))
-                {
-                    <div class="aspect-video overflow-hidden rounded-t-xl">
-                        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                            src="@imageUrl"
-                            alt="@title"
-                            loading="lazy">
-                    </div>
-                }
-                else
-                {
-                    <div class="aspect-video flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-t-xl">                                
-                        <svg class="w-20 h-20 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                }
+@* 1. Kiểm tra nếu Model rỗng thì không render grid *@
+@if (Model != null && Model.Any())
+{
+    @* Dùng CSS Grid của Tailwind đồng bộ với cấu trúc vtl-grid *@
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        @foreach (var item in Model)
+        {
+            var title = item.Name;
+            var description = item.Value<string>("description");
+            
+            var imgMedia = item.Value<IEnumerable<IPublishedContent>>("image")?.FirstOrDefault();
+            var iconMedia = item.Value<IEnumerable<IPublishedContent>>("icon")?.FirstOrDefault();
+            
+            var imageUrl = imgMedia != null ? imgMedia.GetCropUrl(600, 400) : "/media/default/VTL_logo.svg";
+            var iconUrl = iconMedia != null ? iconMedia.Url() : "/media/default/VTL_logo.svg";
 
-                @* Nội dung *@
-                <div class="p-6 flex flex-col justify-between h-auto">
-                    <div>
-                        <div class="flex items-center gap-2 mb-2">
-                            @if (!string.IsNullOrEmpty(iconUrl))
-                            {
-                                <img src="@iconUrl" alt="Icon @title" class="w-6 h-6" loading="lazy" />
-                            }
-                            else
-                            {
-                                <img src="/media/default/VTL_EX-logo.svg" alt="Biểu tượng Ex" class="w-6 h-6" loading="lazy" />
-                            }
-
-                            <h3 class="text-xl font-bold text-primary dark:text-white line-clamp-2">@title</h3>
-                        </div>
-
-                        @if (!string.IsNullOrWhiteSpace(description))
+            @* 2. Card Component: Thêm overflow-hidden và border-kỹ-thuật *@
+            <article class="group relative bg-white dark:bg-[#0d0d0e] border border-slate-200 dark:border-white/5 rounded-xl transition-all duration-500 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10">
+                
+                @* Thẻ <a> bao toàn bộ nội dung *@
+                <a href="@item.Url()" class="flex flex-col h-full overflow-hidden">
+                    
+                    @* Phần Media: Tỷ lệ 16:9 *@
+                    <div class="relative aspect-video overflow-hidden shrink-0 bg-gray-100 dark:bg-white/5">
+                        <img src="@imageUrl" alt="@title" 
+                             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[20%] group-hover:grayscale-0" 
+                             loading="lazy" />
+                        
+                        @* Scanner Effect (Tia quét dọc) *@
+                        <div class="absolute inset-x-0 top-0 h-[2px] bg-primary shadow-[0_0_15px_rgba(59,130,246,0.8)] opacity-0 group-hover:opacity-100 group-hover:animate-vtl-scan z-10 pointer-events-none"></div>
+                        
+                        @* Icon đè lên ảnh theo kiểu module (Nếu có) *@
+                        @if (iconMedia != null)
                         {
-                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3" title="@description">
-                                @description
-                            </p>
+                            <div class="absolute top-4 left-4 z-20">
+                                <div class="bg-white/90 dark:bg-[#1a1a1c]/90 backdrop-blur-md p-1.5 rounded shadow-lg border border-white/10">
+                                    <img src="@iconUrl" alt="icon" class="w-7 h-7 object-contain block" />
+                                </div>
+                            </div>
                         }
                     </div>
-                    <span class="inline-block mt-4 text-primary dark:text-white hover:text-blue-500 text-sm font-medium transition-colors duration-200">
-                        @viewMoreText
-                    </span>
-                </div>
-            </a>
-        </article>
+
+                    @* Phần Content *@
+                    <div class="p-6 flex flex-col flex-grow relative">
+                        @* Họa tiết lưới mờ góc card (Tech-grid) *@
+                        <div class="absolute bottom-0 right-0 w-12 h-12 opacity-[0.03] dark:opacity-[0.1] pointer-events-none" 
+                             style="background-image: radial-gradient(#3b82f6 1px, transparent 1px); background-size: 6px 6px;"></div>
+
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-black uppercase tracking-tight text-gray-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 mb-3">
+                                @title
+                            </h3>
+
+                            @if (!string.IsNullOrWhiteSpace(description))
+                            {
+                                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-3 font-medium">
+                                    @description
+                                </p>
+                            }
+                        </div>
+
+                        @* Footer: CTA Industrial Style *@
+                        <div class="mt-6 pt-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between">
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                                @viewMoreText
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <span class="w-6 h-[1px] bg-primary/30 group-hover:w-10 transition-all duration-500"></span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+
+                @* Corner marks trang trí (Chỉ hiện khi hover) *@
+                <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-primary/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-primary/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </article>
+        }
+    </div>
+}
+
+<style>
+    @@keyframes vtl-scan {
+        0% { top: 0%; opacity: 0; }
+        50% { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
     }
-</div>
+    .animate-vtl-scan {
+        animation: vtl-scan 3s ease-in-out infinite;
+    }
+</style>

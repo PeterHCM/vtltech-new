@@ -18,69 +18,81 @@
 
 @if (!isIntranet && !isMinimalPage)
 {
-    <section class="relative py-12 md:py-20 lg:py-28 bg-gray-50 dark:bg-gray-950">
+    <section class="relative py-16 md:py-24 lg:py-32 bg-gray-950 overflow-hidden">
         <div class="absolute inset-0">
-            <div class="absolute inset-0 bg-black/40 dark:bg-black/60 z-0"></div>
-            <img src="@imageUrl" alt="Banner" class="w-full h-full object-cover opacity-60 dark:opacity-40" loading="lazy" />
+            @* Lớp overlay gradient thay vì chỉ đen để màu ảnh rực hơn *@
+            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10"></div>
+            <img src="@imageUrl" alt="Banner" class="w-full h-full object-cover" loading="lazy" />
+            
+            @* Thêm hiệu ứng đường kẻ công nghệ cho đúng chất VTL *@
+            <div class="absolute inset-0 opacity-10 z-0 bg-[radial-gradient(#e06800_1px,transparent_1px)] [background-size:20px_20px]"></div>
         </div>
-        <div class="relative z-10 mx-auto px-6 md:px-12 lg:px-24 max-w-7xl text-white">
-            <nav aria-label="Breadcrumb" class="mb-4 text-sm text-gray-200 dark:text-gray-300">
-                <ol class="flex flex-wrap items-center space-x-2">
+
+        <div class="relative z-20 mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
+            <nav aria-label="Breadcrumb" class="mb-6">
+                <ol class="flex flex-wrap items-center space-x-2 text-sm">
                     <li>
-                        <a href="/" class="hover:text-primary dark:hover:text-amber-400 font-medium transition duration-150">
+                        <a href="/" class="text-white/80 hover:text-[#e06800] transition duration-200">
                             @(isVietnamese ? "Trang chủ" : "Home")
                         </a>
                     </li>
                     @foreach (var ancestor in ancestors)
                     {
-                        <li>
-                            <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
-                            <a href="@ancestor.Url()" class="hover:text-primary dark:hover:text-amber-400 transition duration-150">@ancestor.Name</a>
+                        <li class="flex items-center space-x-2">
+                            <span class="text-white/40">/</span>
+                            <a href="@ancestor.Url()" class="text-white/80 hover:text-[#e06800] transition">@ancestor.Name</a>
                         </li>
                     }
-                    <li>
-                        <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
-                        <span class="text-white font-semibold" aria-current="page">@title</span>
+                    <li class="flex items-center space-x-2">
+                        <span class="text-white/40">/</span>
+                        <span class="text-[#e06800] font-bold" aria-current="page">@title</span>
                     </li>
                 </ol>
             </nav>
 
-            <h1 class="text-3xl md:text-5xl lg:text-6xl font-extrabold text-white">@title</h1>
+            @* Tiêu đề với điểm nhấn màu Cam VTL *@
+            <div class="max-w-4xl">
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight uppercase tracking-tighter">
+                    @title<span class="text-[#e06800]">.</span>
+                </h1>
 
-            @if (!string.IsNullOrWhiteSpace(description))
-            {
-                <p class="mt-4 text-lg md:text-xl text-gray-200">@description</p>
-            }
+                @if (!string.IsNullOrWhiteSpace(description))
+                {
+                    <div class="mt-6 h-1 w-20 bg-[#006361]"></div> @* Thanh ngang màu Xanh *@
+                    <p class="mt-6 text-lg md:text-xl text-gray-200 leading-relaxed font-medium">@description</p>
+                }
+            </div>
         </div>
     </section>
 }
-else @if (!isMinimalPage)
+else if (!isMinimalPage)
 {
-    <div class="mx-auto px-6 md:px-12 lg:px-24 max-w-7xl py-4">
-        <nav aria-label="Breadcrumb" class="my-2">
-            <ol class="flex flex-wrap items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
-                <li>
-                    <a href="/" class="hover:text-primary dark:hover:text-white font-medium transition duration-150">
-                        @(isVietnamese ? "Trang chủ" : "Home")
-                    </a>
-                </li>
-                @foreach (var ancestor in ancestors)
-                {
+    @* Giao diện Intranet: Tinh tế và chuyên nghiệp *@
+    <div class="bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800">
+        <div class="mx-auto px-6 md:px-12 lg:px-24 max-w-7xl py-8">
+            <nav aria-label="Breadcrumb" class="mb-4">
+                <ol class="flex flex-wrap items-center space-x-2 text-xs uppercase tracking-widest font-bold">
                     <li>
-                        <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
-                        <a href="@ancestor.Url()" class="hover:text-primary dark:hover:text-white transition duration-150">@ancestor.Name</a>
+                        <a href="/" class="text-gray-400 hover:text-[#006361] transition">@(isVietnamese ? "Trang chủ" : "Home")</a>
                     </li>
-                }
-                <li>
-                    <span class="mx-1 text-gray-400 dark:text-gray-500">/</span>
-                    <span class="text-gray-800 dark:text-white font-semibold" aria-current="page">@title</span>
-                </li>
-            </ol>
-        </nav>
-        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-2 mb-4">@title</h1>
-        @if (!string.IsNullOrWhiteSpace(description))
-        {
-            <p class="text-base text-gray-700 dark:text-gray-300">@description</p>
-        }
+                    @foreach (var ancestor in ancestors)
+                    {
+                        <li class="flex items-center space-x-2">
+                            <span class="text-gray-300">/</span>
+                            <a href="@ancestor.Url()" class="text-gray-400 hover:text-[#006361]">@ancestor.Name</a>
+                        </li>
+                    }
+                </ol>
+            </nav>
+            
+            <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">
+                @title
+            </h1>
+            
+            @if (!string.IsNullOrWhiteSpace(description))
+            {
+                <p class="mt-2 text-gray-500 dark:text-gray-400 border-l-4 border-[#e06800] pl-4 italic">@description</p>
+            }
+        </div>
     </div>
 }

@@ -1,35 +1,70 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
-@inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
 @using Umbraco.Cms.Core.Models
+@using Umbraco.Extensions
 @{
     Layout = "layout.cshtml";
-    var description = Model.Value<string>("description")?.Replace("\n", "<br />");
+    
+    // Lấy dữ liệu an toàn
+    var description = Model.Value<string>("description");
     var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
     var images = Model.Value<IEnumerable<IPublishedContent>>("image")?.ToList() ?? new List<IPublishedContent>();
-    var fallbackPartial = "Partials/blockgrid/Default";
+    
+    var title = Model.HasValue("title") ? Model.Value<string>("title") : Model.Name;
 }
 
 @await Html.PartialAsync("Partials/Shared/banner", Model)
 
-@if (blocks?.Any() == true)
-{
-    <section class="container-main Project">
+@* Dùng vtl-container để căn giữa 1440px *@
+<main class="vtl-container py-12 md:py-20">
+    
+    @* Tiêu đề và Mô tả *@
+    <div class="mb-10">
+        <h1 class="vtl-section-title text-3xl md:text-4xl font-bold mb-4">@title</h1>
+        <div class="vtl-section-divider !mx-0 mb-6"></div>
+        
         @if (!string.IsNullOrWhiteSpace(description))
         {
-            <p>@Html.Raw(description)</p>
+            <div class="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-400">
+                @Html.Raw(description.Replace("\n", "<br />"))
+            </div>
         }
-        <div class="mt-12 mb-12">
-            @(await Html.PartialAsync($"Partials/Shared/ImageCarousel", images))
+    </div>
+
+    @* Carousel ảnh - bọc trong div đơn giản để tránh lỗi *@
+    @if (images.Any())
+    {
+        <div class="my-12">
+            <div class="vtl-block-adaptive !p-2">
+                 @await Html.PartialAsync("Partials/Shared/ImageCarousel", images)
+            </div>
         </div>
-        <div class="grid grid-cols-12 auto-rows-min gap-4">
+    }
+    @if (blocks != null && blocks.Any())
+    {
+        <div class="grid grid-cols-12 gap-y-12 md:gap-y-20 gap-x-6 md:gap-x-10 items-stretch">
             @foreach (var block in blocks)
             {
+                // Lấy tên Alias của Block (ví dụ: textBlock, imageBlock)
                 var alias = block.Content.ContentType.Alias;
-                var partialPath = $"Partials/blockgrid/{alias}";
-                var viewResult = viewEngine.FindView(ViewContext, partialPath, isMainPage: false);
-                var partialToRender = viewResult.Success ? partialPath : fallbackPartial;
-                @await Html.PartialAsync(partialToRender, block)
+                
+                <div class="col-span-12 lg:col-span-@(block.ColumnSpan) flex flex-col">
+                     @* Gọi đúng file theo Alias, truyền đúng Model là block *@
+                     @await Html.PartialAsync($"Partials/blockgrid/{alias}", block)
+                </div>
             }
         </div>
-    </section>
-}
+    }
+
+</main>
+
+<style>
+    /* Fix khoảng cách cho các block con để không bị dính nhau */
+    .vtl-container .grid > div {
+        margin-bottom: 1.5rem;
+    }
+    @@media (min-width: 1024px) {
+        .vtl-container .grid > div {
+            margin-bottom: 0;
+        }
+    }
+</style>

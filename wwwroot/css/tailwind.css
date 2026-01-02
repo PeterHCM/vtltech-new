@@ -1,225 +1,229 @@
+/* ==========================================================================
+   TAILWIND CORE
+   ========================================================================== */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* --- Base styles (toàn site) --- */
+
+/* ==========================================================================
+   1. BASE STYLES (Global / Typography / Reset)
+   ========================================================================== */
 @layer base {
   html {
-    @apply font-sans text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 antialiased;
+    @apply font-sans antialiased bg-white text-gray-800
+           dark:bg-[#0a0a0b] dark:text-gray-200;
     font-family: 'Inter', system-ui, sans-serif;
-  }
-
-  body {
-    @apply leading-relaxed;
+    scroll-behavior: smooth;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold text-gray-900 text-primary dark:text-white;
-    font-family: 'Inter', sans-serif;
+    @apply font-bold tracking-tight leading-tight
+           text-gray-900 dark:text-white;
   }
 
-  h1 { @apply text-4xl md:text-5xl tracking-tight mb-6; }
-  h2 { @apply text-3xl md:text-4xl tracking-tight mb-5; }
+  h1 { @apply text-4xl md:text-5xl mb-6; }
+  h2 { @apply text-3xl md:text-4xl mb-5; }
   h3 { @apply text-2xl md:text-3xl mb-4; }
-  h4 { @apply text-xl md:text-2xl mb-3; }
-  h5 { @apply text-lg mb-2; }
-  h6 { @apply text-base uppercase tracking-wide mb-2; }
 
   p {
-    @apply text-base text-gray-700 dark:text-gray-300 leading-relaxed;
-    font-family: 'Inter', sans-serif;
+    @apply leading-relaxed text-gray-700 dark:text-gray-400;
   }
 
   a {
-    @apply no-underline hover:text-primary transition-colors;
-    font-family: 'Inter', sans-serif;
-  }
-
-  strong {
-    @apply font-semibold text-gray-900 dark:text-white;
+    @apply no-underline transition-all duration-300;
   }
 
   ::selection {
-    @apply bg-blue-200 text-black dark:bg-blue-600 dark:text-white;
-  }
-
-  input,
-  textarea,
-  select {
-    @apply w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all;
-    font-family: 'Inter', sans-serif;
-  }
-
-  label {
-    @apply block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300;
-    font-family: 'Inter', sans-serif;
-  }
-
-  input[type="checkbox"],
-  input[type="radio"] {
-    @apply accent-primary focus:ring-primary;
-  }
-
-  input:disabled,
-  textarea:disabled,
-  select:disabled {
-    @apply bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed;
+    @apply bg-primary/30 text-primary;
   }
 }
 
-/* --- Components (menu, clamp, v.v.) --- */
+
+/* ==========================================================================
+   2. SYSTEM COMPONENTS (VTL Design System)
+   ========================================================================== */
 @layer components {
-  .menu-item {
-    @apply px-3 py-2 text-gray-900 dark:text-white hover:text-primary transition-colors duration-200 ease-in-out block;
+
+  /* ------------------------------------------------------------------------
+     Layout / Container
+     ------------------------------------------------------------------------ */
+  .vtl-container {
+    @apply w-full max-w-[1440px] mx-auto
+           px-4 sm:px-6 lg:px-10;
   }
 
-  .menu-item-active {
-    @apply font-semibold text-primary dark:text-primary;
+  /* ------------------------------------------------------------------------
+     Section Headers
+     ------------------------------------------------------------------------ */
+  .vtl-section-subtitle {
+    @apply block mb-3 text-[11px] md:text-xs
+           font-bold uppercase tracking-[0.2em]
+           text-primary;
   }
 
-  .menu-sub-item:hover .menu-sub-item-hover\:rotate-90 {
-    transform: rotate(90deg);
+  .vtl-section-title {
+    @apply mb-4 text-3xl md:text-4xl
+           font-bold leading-tight
+           text-gray-900 dark:text-white;
   }
 
-  .menu-sub-item:hover .menu-sub-item-hover\:block {
-    display: block;
+  .vtl-section-divider {
+    @apply mx-auto mb-12 w-16 h-1
+           rounded-full bg-primary opacity-50;
   }
 
-  .clamp-3-lines {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  /* ------------------------------------------------------------------------
+     Blocks / Cards
+     ------------------------------------------------------------------------ */
+  .vtl-block-adaptive {
+    @apply w-full p-6 md:p-10 rounded-2xl
+           border border-gray-100 bg-white shadow-sm
+           transition-all duration-300
+           dark:border-white/5 dark:bg-gray-900/50
+           dark:backdrop-blur-sm;
+  }
+
+  .vtl-block-dark {
+    @apply w-full p-6 md:p-10 rounded-2xl
+           border border-white/5
+           bg-[#0a0a0b] text-gray-300
+           shadow-2xl transition-all;
+  }
+
+  /* ------------------------------------------------------------------------
+     Typography Decor
+     ------------------------------------------------------------------------ */
+  .vtl-heading {
+    @apply flex items-center gap-3
+           font-bold uppercase tracking-wider
+           text-gray-900 dark:text-white;
+  }
+
+  .vtl-heading::before {
+    content: "";
+    @apply w-1.5 h-8 rounded-full bg-primary;
+    box-shadow: 0 0 15px #e06800;
+  }
+
+  /* ------------------------------------------------------------------------
+     Buttons
+     ------------------------------------------------------------------------ */
+  .vtl-btn {
+    @apply inline-flex items-center justify-center
+          px-4 py-2
+          rounded-md
+          font-semibold text-sm
+          transition-colors duration-200
+          focus:outline-none
+          focus-visible:ring-2 focus-visible:ring-primary/40
+          active:scale-[0.98];
+  }
+
+  .vtl-btn-primary {
+    @apply vtl-btn
+          bg-primary text-white
+          hover:bg-secondary
+          disabled:opacity-60 disabled:pointer-events-none;
+  }
+  .vtl-btn-outline {
+    @apply vtl-btn
+          border border-primary
+          text-primary bg-transparent
+          hover:bg-primary hover:text-white;
+  }
+  /* ------------------------------------------------------------------------
+     Grid / Carousel
+     ------------------------------------------------------------------------ */
+  .vtl-grid {
+    @apply grid w-full py-10 gap-8
+           grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .carousel-track {
+    display: flex;
+    gap: 1.5rem; /* gap-6 */
+    will-change: transform;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .carousel-slide {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  /* ------------------------------------------------------------------------
+     Links / Interactive
+     ------------------------------------------------------------------------ */
+  .vtl-link {
+    @apply flex items-center gap-2 text-sm
+           text-gray-500 dark:text-gray-400
+           hover:text-primary
+           transition-all duration-300;
+  }
+
+  .vtl-link-dot {
+    @apply w-1.5 h-1.5 rounded-full bg-primary
+           opacity-0 scale-0
+           transition-all duration-300;
+  }
+
+  .group:hover .vtl-link-dot {
+    @apply opacity-100 scale-100;
   }
 }
 
-/* --- Buttons --- */
-.btn,
-.btn-outline,
-.btn-secondary {
-  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 ease-in-out;
-  font-family: 'Inter', sans-serif;
+
+/* ==========================================================================
+   3. UTILITIES (Custom Animations)
+   ========================================================================== */
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
 }
 
-.btn {
-  @apply text-white bg-primary hover:bg-secondary shadow-sm;
+
+/* ==========================================================================
+   4. KEYFRAMES
+   ========================================================================== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.btn-outline {
-  @apply border border-primary text-primary hover:bg-primary hover:text-white;
-}
 
-.btn-secondary {
-  @apply bg-secondary text-white hover:bg-primary;
-}
+/* ==========================================================================
+   5. MEDIA QUERIES
+   ========================================================================== */
 
-.btn-active {
-  @apply bg-secondary text-white;
-}
-
-.block-wrapper {
-  @apply w-full p-4 md:p-6 bg-white dark:bg-gray-900 rounded-lg shadow-md;
-}
-
-.container-main {
-  @apply max-w-screen-xl mx-auto py-8 px-6 md:px-12 lg:px-24;
-}
-
-/* --- Modern Card --- */
-.card {
-  @apply relative bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 ease-in-out overflow-hidden;
-}
-
-.card:hover {
-  @apply scale-[1.015] border-primary/50;
-}
-
-.card-header {
-  @apply px-6 py-4 border-b border-gray-100 dark:border-gray-800 text-xl font-semibold text-gray-900 dark:text-white tracking-tight;
-  font-family: 'Inter', sans-serif;
-}
-
-.card-image {
-  @apply w-full aspect-[16/9] object-cover transition-transform duration-500 hover:scale-105 hover:brightness-105;
-}
-
-.card-body {
-  @apply px-6 py-5 text-gray-700 dark:text-gray-300 leading-relaxed text-[15px];
-}
-
-.card-detail {
-  @apply inline-flex items-center gap-1 mt-4 text-primary hover:text-secondary text-sm font-medium transition-colors duration-200;
-}
-
-.card-footer {
-  @apply px-6 py-4 border-t border-gray-100 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400;
-}
-/* ---------------------------------------------------------------------------------- */
-/* --- CUSTOM PRINT STYLES (Chỉ In Nội Dung Cụ Thể) --- */
-/* ---------------------------------------------------------------------------------- */
-/* 1. ĐẶT LỀ CHO GIẤY (NGOÀI CÙNG) */
-@page {
-    /* Lề giấy (top right bottom left): 0.5in 0.5in 0.5in 1in */
-    margin: 0.5in 0.5in 0.5in 1in; 
-    size: A4 portrait;
-}
-
+/* --- Print --- */
 @media print {
-    /* BƯỚC 1A: LOẠI BỎ MARGIN/PADDING MẶC ĐỊNH CỦA BODY */
-    body {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    /* BƯỚC 1B: Ẩn toàn bộ nội dung */
-    body * {
-        visibility: hidden !important;
-    }
+  body * {
+    visibility: hidden !important;
+  }
 
-    /* BƯỚC 2: Hiện lại và Tối ưu hóa khu vực cần in */
-    .print-only-content,
-    .print-only-content * {
-        visibility: visible !important;
-        
-        /* Đảm bảo chữ là màu đen và nền trắng */
-        color: black !important;
-        background-color: white !important;
-        text-shadow: none !important;
-    }
+  .print-only-content,
+  .print-only-content * {
+    visibility: visible !important;
+    color: black !important;
+    background: white !important;
+  }
 
-    /* BƯỚC 3: Tối ưu hóa Layout: Kéo nội dung lên trên và áp dụng lề */
-    .print-only-content {
-        /* QUAY LẠI SỬ DỤNG VỊ TRÍ TUYỆT ĐỐI */
-        /* Mục đích: Đảm bảo nội dung BẮT ĐẦU từ góc trên/trái của khu vực in */
-        position: absolute !important; 
-        left: 0 !important;
-        top: 0 !important;
-        
-        /* Đặt padding/margin = 0 để @page kiểm soát lề */
-        margin: 0 !important;
-        padding: 0 !important; 
-        width: 100% !important;
-        
-        /* Các thiết lập cũ, chỉ giữ lại nếu cần cho bố cục in */
-        float: none !important; 
-    }
-    
-    /* Ghi đè màu đen cho các thành phần đặc biệt */
-    .print-only-content h1,
-    .print-only-content h2,
-    .print-only-content h3,
-    .print-only-content h4,
-    .print-only-content a,
-    .print-only-content strong {
-        color: black !important;
-    }
+  .print-only-content {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+  }
+}
 
-    /* Tối ưu hóa các hiệu ứng không cần thiết */
-    .print-only-content a {
-        text-decoration: underline !important;
-    }
-    .print-only-content * {
-        box-shadow: none !important;
-        border-color: #ccc !important; 
-    }
+/* --- Carousel responsive --- */
+@media (min-width: 640px) {
+  .carousel-slide {
+    width: calc((100% - 1.5rem) / 2);
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-slide {
+    width: calc((100% - 3 * 1.5rem) / 4);
+  }
 }

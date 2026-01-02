@@ -4,44 +4,95 @@
 
 @{
     var content = Model.Content;
-    var settings = Model.Settings;
-
-    var columnSpan = ((int?)Model.ColumnSpan).GetValueOrDefault(12);
-    var rowSpan = ((int?)Model.RowSpan).GetValueOrDefault(1);
-    var blockClass = $"col-span-12 row-span-12 sm:col-span-{columnSpan} sm:row-span-{rowSpan}";
+    var columnSpan = Model.ColumnSpan;
+    
+    // Mapping Tailwind Class (Bắt buộc để Tailwind nhận diện được class)
+    var gridClasses = columnSpan switch {
+        1 => "lg:col-span-1",
+        2 => "lg:col-span-2",
+        3 => "lg:col-span-3",
+        4 => "lg:col-span-4",
+        6 => "lg:col-span-6",
+        8 => "lg:col-span-8",
+        9 => "lg:col-span-9",
+        _ => "lg:col-span-12"
+    };
 
     var title = content.Value<string>("title");
     var description = content.Value<string>("description");
-    var buttonText = content.Value<string>("buttonText");
-
-    // Lấy link đầu tiên từ Multi URL Picker
-    var ctaLink = content.Value<IEnumerable<Link>>("buttonLink")?.FirstOrDefault();
-    var ctaUrl = ctaLink?.Url;
-    var ctaTarget = ctaLink?.Target;
+    var ctaLinks = content.Value<IEnumerable<Link>>("buttonLink");
+    var layout = content.Value<string>("layout") ?? "Ngang"; // Mặc định là Ngang
 }
-<div class="@blockClass">
-    <div class="p-4 sm:p-6 rounded-lg shadow-md bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 h-full flex flex-col justify-center items-start text-center sm:text-left">
-        @if (!string.IsNullOrEmpty(title))
-        {
-            <h2 class="text-xl sm:text-2xl font-bold mb-2">@title</h2>
-        }
 
-        @if (!string.IsNullOrEmpty(description))
-        {
-            <p class="text-base sm:text-lg mb-4 opacity-80 leading-relaxed">@description</p>
-        }
+<div class="col-span-12 @gridClasses">
+    @if (layout == "Ngang")
+    {
+        @* Layout Ngang: Thường dùng làm Banner hành động giữa trang *@
+        <div class="relative overflow-hidden bg-secondary rounded-2xl p-8 md:p-12 shadow-xl group">
+            @* Decor trang trí phía sau *@
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
+            
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+                <div class="text-center md:text-left">
+                    @if (!string.IsNullOrWhiteSpace(title))
+                    {
+                        <h3 class="text-2xl md:text-3xl font-bold text-white mb-2">@title</h3>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(description))
+                    {
+                        <p class="text-white/80 max-w-xl">@Html.Raw(description.Replace("\n", "<br />"))</p>
+                    }
+                </div>
 
-        @if (!string.IsNullOrEmpty(buttonText) && !string.IsNullOrEmpty(ctaUrl))
-        {
-            <a href="@ctaUrl" target="@ctaTarget" rel="noopener"
-               class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded transition duration-200">
-                @buttonText
-            </a>
-        }
+                @if (ctaLinks?.Any() == true)
+                {
+                    <div class="flex flex-wrap gap-4 justify-center">
+                        @foreach (var link in ctaLinks)
+                        {
+                            <a href="@link.Url" target="@link.Target" rel="noopener"
+                                class="vtl-btn-primary">
+                                @link.Name
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {    
+        @* Layout Dọc: Dùng cho các box nội dung thông thường *@
+        <div class="vtl-block-adaptive p-8 flex flex-col justify-center items-center text-center h-full">
+            @if (!string.IsNullOrWhiteSpace(title))
+            {
+                <h3 class="vtl-section-title !text-2xl mb-4">@title</h3>
+            }
 
-        @if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(description) && string.IsNullOrEmpty(buttonText))
-        {
-            <p class="text-red-500 opacity-50">CTA Block - Chưa nhập nội dung.</p>
-        }
-    </div>
+            @if (!string.IsNullOrWhiteSpace(description))
+            {
+                <p class="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                    @Html.Raw(description.Replace("\n", "<br />"))
+                </p>
+            }
+
+            @if (ctaLinks?.Any() == true)
+            {
+                <div class="flex flex-wrap gap-4 justify-center">
+                    @foreach (var link in ctaLinks)
+                    {
+                        <a href="@link.Url" target="@link.Target" rel="noopener"
+                        class="vtl-btn-primary">
+                            @link.Name
+                        </a>
+                    }
+                </div>
+            }
+            @if (string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(description) && (ctaLinks == null || !ctaLinks.Any()))
+            {
+                <div class="p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 italic">
+                    CTA Block - Chưa nhập nội dung.
+                </div>
+            }
+        </div>    
+    }
 </div>

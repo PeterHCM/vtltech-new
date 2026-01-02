@@ -2,14 +2,47 @@
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
 @{
-    var copyrightText = Umbraco
-        .ContentAtRoot()
-        .FirstOrDefault(x => x.ContentType.Alias == "companySettings")
-        ?.Value<string>("copyright")
-        ?? "© 2025 Viet Thang Loi Technology Company Limited";
+    var settings = Umbraco.ContentAtRoot()?.FirstOrDefault(x => x.ContentType.Alias == "companySettings");
+    if (settings == null) { return; }
+
+    var copyrightText = settings.Value<string>("copyright") ?? $"© {DateTime.Now.Year} VTL Technology";
+    var policyLinks = settings.Value<IEnumerable<Link>>("policyUrl") ?? Enumerable.Empty<Link>();
 }
-<footer class="bg-gray-900 dark:bg-gray-950"> 
-    <div class="container print:hidden max-w-7xl mx-auto px-6 py-8 border-t border-gray-700 text-center text-xs text-gray-400 dark:text-gray-500">
-        <p class="text-white">@copyrightText</p>
+
+@* Phần bản quyền dưới cùng (Sub-Footer) *@
+<div class="bg-[#0a0a0b] border-t border-white/5 py-10">
+    <div class="vtl-container">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-8">
+            
+            @* Bên trái: Copyright *@
+            <div class="order-2 md:order-1 text-center md:text-left">
+                <p class="text-[10px] text-gray-500 uppercase tracking-[0.25em] font-medium leading-loose">
+                    @copyrightText
+                </p>
+            </div>
+
+            @* Bên phải: Policy Links *@
+            @if (policyLinks.Any())
+            {
+                <div class="order-1 md:order-2">
+                    <nav class="flex flex-wrap justify-center md:justify-end gap-x-10 gap-y-4">
+                        @foreach (var link in policyLinks)
+                        {
+                            var url = link.Url ?? "#";
+                            var target = !string.IsNullOrWhiteSpace(link.Target) ? link.Target : "_self";
+                            
+                            <a href="@url" 
+                               target="@target" 
+                               class="text-[10px] text-gray-500 hover:text-primary uppercase tracking-[0.25em] font-bold transition-all duration-300 relative group">
+                                @link.Name
+                                @* Line hiệu ứng dưới chân chữ *@
+                                <span class="absolute -bottom-1 left-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full"></span>
+                            </a>
+                        }
+                    </nav>
+                </div>
+            }
+            
+        </div>
     </div>
-</footer>
+</div>
