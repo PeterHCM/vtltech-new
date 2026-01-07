@@ -29,4 +29,9 @@ Thumbs.db
 # Cache
 .cache/
 *.tmp
+<<<<<<< HEAD
 Products/
+=======
+# Products
+Products/
+>>>>>>> bedc781c57a7ee362ed0abe6447c0c56d5f8b804

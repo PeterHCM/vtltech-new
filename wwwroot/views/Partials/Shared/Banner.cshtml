@@ -18,81 +18,131 @@
 
 @if (!isIntranet && !isMinimalPage)
 {
-    <section class="relative py-16 md:py-24 lg:py-32 bg-gray-950 overflow-hidden">
-        <div class="absolute inset-0">
-            @* Lớp overlay gradient thay vì chỉ đen để màu ảnh rực hơn *@
-            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10"></div>
-            <img src="@imageUrl" alt="Banner" class="w-full h-full object-cover" loading="lazy" />
-            
-            @* Thêm hiệu ứng đường kẻ công nghệ cho đúng chất VTL *@
-            <div class="absolute inset-0 opacity-10 z-0 bg-[radial-gradient(#e06800_1px,transparent_1px)] [background-size:20px_20px]"></div>
+    <section class="relative min-h-[250px] md:min-h-[250px] flex items-center bg-gray-950 overflow-hidden">
+        @* Background Layer *@
+        <div class="absolute inset-0 select-none">
+            <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent z-10"></div>
+            <img src="@imageUrl" alt="Banner @title" class="w-full h-full object-cover object-center scale-105" loading="lazy" />
+            <div class="absolute inset-0 opacity-[0.05] z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]"></div>
         </div>
 
-        <div class="relative z-20 mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
-            <nav aria-label="Breadcrumb" class="mb-6">
-                <ol class="flex flex-wrap items-center space-x-2 text-sm">
-                    <li>
-                        <a href="/" class="text-white/80 hover:text-[#e06800] transition duration-200">
-                            @(isVietnamese ? "Trang chủ" : "Home")
-                        </a>
-                    </li>
-                    @foreach (var ancestor in ancestors)
-                    {
-                        <li class="flex items-center space-x-2">
-                            <span class="text-white/40">/</span>
-                            <a href="@ancestor.Url()" class="text-white/80 hover:text-[#e06800] transition">@ancestor.Name</a>
-                        </li>
-                    }
-                    <li class="flex items-center space-x-2">
-                        <span class="text-white/40">/</span>
-                        <span class="text-[#e06800] font-bold" aria-current="page">@title</span>
-                    </li>
-                </ol>
-            </nav>
-
-            @* Tiêu đề với điểm nhấn màu Cam VTL *@
-            <div class="max-w-4xl">
-                <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight uppercase tracking-tighter">
+        @* Main Content (Title & Description) *@
+        <div class="relative z-20 vtl-container px-4">
+            <div class="max-w-5xl">
+                <div class="hidden md:block flex items-center gap-4 mb-2">
+                    <div class="h-[2px] w-8 bg-[#006361]"></div>
+                    <span class="text-[10px] font-black text-[#006361] tracking-[0.3em] uppercase">Solution Provider For Industries</span>
+                </div>
+                
+                <h1 class="hidden md:block text-3xl md:text-4xl lg:text-5xl font-black text-white leading-[1.1] uppercase tracking-tighter">
                     @title<span class="text-[#e06800]">.</span>
                 </h1>
 
                 @if (!string.IsNullOrWhiteSpace(description))
                 {
-                    <div class="mt-6 h-1 w-20 bg-[#006361]"></div> @* Thanh ngang màu Xanh *@
-                    <p class="mt-6 text-lg md:text-xl text-gray-200 leading-relaxed font-medium">@description</p>
+                    <p class="mt-4 text-sm md:text-base text-gray-300 leading-relaxed max-w-2xl font-medium border-l-2 border-[#e06800]/30 pl-4">
+                        @description
+                    </p>
                 }
+            </div>
+        </div>
+
+        @* Breadcrumb: Đẩy xuống sát mép dưới *@
+        <div class="absolute bottom-0 left-0 w-full z-30 bg-black/20 backdrop-blur-sm border-t border-white/5">
+            <div class="vtl-container px-4 py-3">
+                <nav aria-label="Breadcrumb">
+                    <ol class="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold">
+                        <li>
+                            <a href="/" class="text-white/50 hover:text-[#e06800] transition-colors duration-300 italic">
+                                @(isVietnamese ? "Trang chủ" : "Home")
+                            </a>
+                        </li>
+                        @foreach (var ancestor in ancestors)
+                        {
+                            <li class="flex items-center gap-2">
+                                <span class="text-white/20">/</span>
+                                <a href="@ancestor.Url()" class="text-white/50 hover:text-[#e06800] transition-colors italic">@ancestor.Name</a>
+                            </li>
+                        }
+                        <li class="flex items-center gap-2">
+                            <span class="text-white/20">/</span>
+                            <span class="text-[#e06800]" aria-current="page">@title</span>
+                        </li>
+                    </ol>
+                </nav>
             </div>
         </div>
     </section>
 }
 else if (!isMinimalPage)
-{
-    @* Giao diện Intranet: Tinh tế và chuyên nghiệp *@
-    <div class="bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800">
-        <div class="mx-auto px-6 md:px-12 lg:px-24 max-w-7xl py-8">
-            <nav aria-label="Breadcrumb" class="mb-4">
-                <ol class="flex flex-wrap items-center space-x-2 text-xs uppercase tracking-widest font-bold">
-                    <li>
-                        <a href="/" class="text-gray-400 hover:text-[#006361] transition">@(isVietnamese ? "Trang chủ" : "Home")</a>
+{    
+@* =======================
+   INTRANET HEADER
+   Clean • Enterprise • No Branding Color
+   ======================= *@
+<div class="bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800">
+    <div class="mx-auto max-w-7xl px-6 md:px-12 lg:px-24 py-8">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="mb-4">
+            <ol class="flex flex-wrap items-center gap-1 text-xs font-semibold tracking-wide">
+
+                <!-- Home -->
+                <li>
+                    <a href="/"
+                       class="px-2 py-1 rounded
+                              text-gray-500 dark:text-gray-400
+                              hover:text-gray-900 dark:hover:text-white
+                              hover:bg-gray-100 dark:hover:bg-white/10
+                              transition-colors">
+                        @(isVietnamese ? "Trang chủ" : "Home")
+                    </a>
+                </li>
+
+                @foreach (var ancestor in ancestors)
+                {
+                    <li class="flex items-center gap-1">
+                        <span class="text-gray-300 dark:text-gray-700">›</span>
+                        <a href="@ancestor.Url()"
+                           class="px-2 py-1 rounded
+                                  text-gray-500 dark:text-gray-400
+                                  hover:text-gray-900 dark:hover:text-white
+                                  hover:bg-gray-100 dark:hover:bg-white/10
+                                  transition-colors">
+                            @ancestor.Name
+                        </a>
                     </li>
-                    @foreach (var ancestor in ancestors)
-                    {
-                        <li class="flex items-center space-x-2">
-                            <span class="text-gray-300">/</span>
-                            <a href="@ancestor.Url()" class="text-gray-400 hover:text-[#006361]">@ancestor.Name</a>
-                        </li>
-                    }
-                </ol>
-            </nav>
-            
-            <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">
-                @title
-            </h1>
-            
-            @if (!string.IsNullOrWhiteSpace(description))
-            {
-                <p class="mt-2 text-gray-500 dark:text-gray-400 border-l-4 border-[#e06800] pl-4 italic">@description</p>
-            }
-        </div>
+                }
+
+                <!-- Current -->
+                <li class="flex items-center gap-1">
+                    <span class="text-gray-300 dark:text-gray-700">›</span>
+                    <span class="px-2 py-1 rounded
+                                 text-gray-900 dark:text-white
+                                 font-bold
+                                 bg-gray-100 dark:bg-white/10">
+                        @title
+                    </span>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Title -->
+        <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight
+                   text-gray-900 dark:text-white">
+            @title
+        </h1>
+
+        <!-- Description -->
+        @if (!string.IsNullOrWhiteSpace(description))
+        {
+            <p class="mt-3 max-w-3xl text-sm md:text-base
+                      text-gray-500 dark:text-gray-400
+                      border-l-4 border-gray-300 dark:border-gray-700
+                      pl-4 italic">
+                @description
+            </p>
+        }
     </div>
+</div>
 }
