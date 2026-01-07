@@ -37,6 +37,14 @@
   ::selection {
     @apply bg-primary/30 text-primary;
   }
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    @apply text-gray-900 dark:text-white;
+  }
 }
 
 
