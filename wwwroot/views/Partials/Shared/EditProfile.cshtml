@@ -1,15 +1,31 @@
-@using Umbraco.Cms.Core.Models
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Web.Website.Controllers
 @using Umbraco.Cms.Web.Website.Models
-@using Umbraco.Extensions
-@using System.Linq
 @using System.Text.Json
 @inject MemberModelBuilderFactory memberModelBuilderFactory
-@using Umbraco.Cms.Core.Services;
 @inject IDataTypeService DataTypeService
-@inject IMemberTypeService MemberTypeService
+
 @{
+    // ===================== CONSTANTS =====================
+    const string TabAccount    = "account";
+    const string TabPersonal   = "personal";
+    const string TabWork       = "work";
+    const string TabEmergency1 = "emergency1";
+    const string TabEmergency2 = "emergency2";
+
+    const string InputClass = "block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-primary focus:border-primary";
+
+    var DateAliases = new[] { "dateofbirth", "dateofissue", "dateofjoining" };
+
+    var TabFieldMap = new Dictionary<string, string[]>
+    {
+        { TabAccount,  new[] { "hello" } },
+        { TabPersonal, new[] { "fullname", "phone", "personalemail", "gender", "maritalstatus", "dateofbirth", "nationalid", "dateofissue", "placeofissue", "taxcode", "permanentaddress", "currentaddress" } },
+        { TabWork,     new[] { "position", "department", "dateofjoining", "contracttype" } },
+    };
+
+    // ===================== PROFILE =====================
     var profileModel = await memberModelBuilderFactory
         .CreateProfileModel()
         .WithRedirectUrl(null)
@@ -18,76 +34,70 @@
 
     var isSuccess = TempData["FormSuccess"] != null;
 
-    const string TabAccount = "account";
-    const string TabPersonal = "personal";
-    const string TabWork = "work";
-    const string TabEmergency1 = "emergency1";
-    const string TabEmergency2 = "emergency2";
+    // ===================== TAB & URL =====================
+    var baseQuery = string.Join("&", Context.Request.Query
+        .Where(q => !q.Key.Equals("tab", StringComparison.OrdinalIgnoreCase))
+        .Select(kv => $"{kv.Key}={kv.Value}"));
 
-    var currentQuery = Context.Request.Query
-        .Where(q => !q.Key.Equals("tab", StringComparison.OrdinalIgnoreCase));
-    
-    string baseQuery = string.Join("&", currentQuery.Select(kv => $"{kv.Key}={kv.Value}"));
+    string BuildTabUrl(string tab) => string.IsNullOrEmpty(baseQuery)
+        ? $"{Context.Request.Path}?tab={tab}"
+        : $"{Context.Request.Path}?{baseQuery}&tab={tab}";
 
-    string buildTabUrl1(string tab)
-    {
-        string separator = string.IsNullOrEmpty(baseQuery) ? "?" : $"&";
-        return $"{Context.Request.Path}?{baseQuery}{separator}tab={tab}";
-    }
-    string buildTabUrl(string tab)
-    {
-        return string.IsNullOrEmpty(baseQuery)
-            ? $"{Context.Request.Path}?tab={tab}"
-            : $"{Context.Request.Path}?{baseQuery}&tab={tab}";
-    }
-    var currentTab = Context.Request.Query["tab"].ToString().ToLower() ?? TabAccount;
-    currentTab = string.IsNullOrWhiteSpace(currentTab) ? TabAccount : currentTab;
+    var currentTab = Context.Request.Query["tab"].ToString().ToLower();
+    if (string.IsNullOrWhiteSpace(currentTab)) currentTab = TabAccount;
 
-    string getTabClass(string tab) =>
-        tab.Equals(currentTab, StringComparison.OrdinalIgnoreCase)
+    string GetTabClass(string tab) => tab.Equals(currentTab, StringComparison.OrdinalIgnoreCase)
         ? "flex items-center gap-2 px-4 py-2 font-semibold text-white bg-primary rounded"
         : "flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-primary";
 
-    string inputClass = "block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-primary focus:border-primary";
-
-    var dateAliases = new[] { "dateofbirth", "dateofissue", "dateofjoining" };
-    
-    var tabFieldMap = new Dictionary<string, string[]>
-    {
-        { TabAccount, new[] { "Hello" } },
-        { TabPersonal, new[] { 
-            "fullname", "phone", "personalemail", "gender", "maritalstatus", "dateofbirth", "nationalid", "dateofissue", "placeofissue", "taxcode", "permanentaddress", "currentaddress"
-        } },
-        { TabWork, new[] { 
-            "position", "department", "dateofjoining", "contracttype" 
-        } },
-    };
-    var maritalDataType = await DataTypeService.GetAsync(Guid.Parse("f9e5b2d5-110c-4c14-8c1f-f7e5baecfa46"));
-    var contracttypeDataType = await DataTypeService.GetAsync(Guid.Parse("e23c2f83-7a82-4e71-914f-637d86ac69d0"));
-    var positionDataType = await DataTypeService.GetAsync(Guid.Parse("1e8931bc-2b27-447a-8a51-d65b475bfdcf"));
-    var deptDataType = await DataTypeService.GetAsync(Guid.Parse("e543ef9e-9f68-4689-9ed0-2216c4e45ead"));
-    var relationshipDataType = await DataTypeService.GetAsync(Guid.Parse("9d8451a8-4aa3-4082-897b-c57e981be393"));
-
+    // ===================== HELPERS =====================
     List<string> GetDropdownOptions(IDataType? dt)
-        {
-            if (dt is Umbraco.Cms.Core.Models.DataType model
-                && model.ConfigurationData is Dictionary<string, object> configDict
-                && configDict.TryGetValue("items", out var itemsObj))
-            {
-                var json = System.Text.Json.JsonSerializer.Serialize(itemsObj);
-                return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
-            }
-            return new List<string>();
-        }
-     var dropdownOptions = new Dictionary<string, List<string>>
     {
-        { "maritalstatus", GetDropdownOptions(maritalDataType) },
-        { "contracttype", GetDropdownOptions(contracttypeDataType) },
-        { "position", GetDropdownOptions(positionDataType) },
-        { "department", GetDropdownOptions(deptDataType) },
-        { "emergencycontact1relationship", GetDropdownOptions(relationshipDataType) },
-        { "emergencycontact2relationship", GetDropdownOptions(relationshipDataType) }
+        if (dt is Umbraco.Cms.Core.Models.DataType model
+            && model.ConfigurationData is Dictionary<string, object> cfg
+            && cfg.TryGetValue("items", out var itemsObj))
+        {
+            var json = JsonSerializer.Serialize(itemsObj);
+            return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+        }
+        return new List<string>();
+    }
 
+    string ParseDropdownValue(string? raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return "";
+        if (raw.StartsWith("["))
+        {
+            try { return JsonSerializer.Deserialize<string[]>(raw)?.FirstOrDefault() ?? ""; }
+            catch { }
+        }
+        return raw;
+    }
+
+    string ParseDateValue(string? raw)
+    {
+        if (DateTime.TryParseExact(raw, "dd/MM/yyyy HH:mm:ss",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var dt))
+            return dt.ToString("yyyy-MM-dd");
+        return "";
+    }
+
+    // ===================== DROPDOWN DATA =====================
+    var maritalDt      = await DataTypeService.GetAsync(Guid.Parse("f9e5b2d5-110c-4c14-8c1f-f7e5baecfa46"));
+    var contractDt     = await DataTypeService.GetAsync(Guid.Parse("e23c2f83-7a82-4e71-914f-637d86ac69d0"));
+    var positionDt     = await DataTypeService.GetAsync(Guid.Parse("1e8931bc-2b27-447a-8a51-d65b475bfdcf"));
+    var deptDt         = await DataTypeService.GetAsync(Guid.Parse("e543ef9e-9f68-4689-9ed0-2216c4e45ead"));
+    var relationshipDt = await DataTypeService.GetAsync(Guid.Parse("9d8451a8-4aa3-4082-897b-c57e981be393"));
+
+    var DropdownOptions = new Dictionary<string, List<string>>
+    {
+        { "maritalstatus",                 GetDropdownOptions(maritalDt)      },
+        { "contracttype",                  GetDropdownOptions(contractDt)     },
+        { "position",                      GetDropdownOptions(positionDt)     },
+        { "department",                    GetDropdownOptions(deptDt)         },
+        { "emergencycontact1relationship", GetDropdownOptions(relationshipDt) },
+        { "emergencycontact2relationship", GetDropdownOptions(relationshipDt) },
     };
 }
 
@@ -95,93 +105,88 @@
 {
     <div class="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
         <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Cập nhật tài khoản</h2>
+
         @if (isSuccess)
         {
-            <div class="mb-4 text-green-600 dark:text-green-400 text-sm">
-                ✅ Cập nhật tài khoản thành công!
-            </div>
+            <div class="mb-4 text-green-600 dark:text-green-400 text-sm">✅ Cập nhật tài khoản thành công!</div>
         }
-        
+
+        {{/* ===== TABS ===== */}}
         <div class="mb-6 flex gap-4 flex-wrap">
-            <a href="@buildTabUrl(TabAccount)" class="@getTabClass(TabAccount)">
-                <svg class="h-6 w-6 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <a href="@BuildTabUrl(TabAccount)" class="@GetTabClass(TabAccount)">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 Tài khoản
             </a>
-            <a href="@buildTabUrl(TabPersonal)" class="@getTabClass(TabPersonal)">        
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5 7.5 7.5 0 0 0-7.5-7.5ZM6 10.5h.008v.008H6v-.008ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            <a href="@BuildTabUrl(TabPersonal)" class="@GetTabClass(TabPersonal)">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5 7.5 7.5 0 0 0-7.5-7.5ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
                 Cá nhân
             </a>
-            <a href="@buildTabUrl(TabWork)" class="@getTabClass(TabWork)">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.582V21a1.5 1.5 0 0 1-1.5 1.5H5.25A1.5 1.5 0 0 1 3.75 21v-6.418M20.25 14.582a4.5 4.5 0 0 0-2.31-2.222l-4.5-2.221a.75.75 0 0 0-.69 0l-4.5 2.221a4.5 4.5 0 0 0-2.31 2.222M20.25 14.582a4.5 4.5 0 0 1 0 5.418m-16.5-5.418a4.5 4.5 0 0 0 0 5.418M18 10.5V11a.75.75 0 0 1-.75.75h-8.5A.75.75 0 0 1 8 11v-.5M15 7.5v-1a1.5 1.5 0 0 0-1.5-1.5h-3A1.5 1.5 0 0 0 9 6.5v1" />
-                </svg>        
+            <a href="@BuildTabUrl(TabWork)" class="@GetTabClass(TabWork)">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.582V21a1.5 1.5 0 0 1-1.5 1.5H5.25A1.5 1.5 0 0 1 3.75 21v-6.418M20.25 14.582a4.5 4.5 0 0 0-2.31-2.222l-4.5-2.221a.75.75 0 0 0-.69 0l-4.5 2.221a4.5 4.5 0 0 0-2.31 2.222M20.25 14.582a4.5 4.5 0 0 1 0 5.418m-16.5-5.418a4.5 4.5 0 0 0 0 5.418" />
+                </svg>
                 Công việc
             </a>
-            <a href="@buildTabUrl(TabEmergency1)" class="@getTabClass(TabEmergency1)">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-red-500">
+            <a href="@BuildTabUrl(TabEmergency1)" class="@GetTabClass(TabEmergency1)">
+                <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0-1.036.84-1.875 1.875-1.875h14.25c1.035 0 1.875.84 1.875 1.875v10.5a1.875 1.875 0 0 1-1.875 1.875H4.125a1.875 1.875 0 0 1-1.875-1.875V6.75Z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008M3.75 12h16.5" />
                 </svg>
                 Liên hệ 1
             </a>
-            <a href="@buildTabUrl(TabEmergency2)" class="@getTabClass(TabEmergency2)">        
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <a href="@BuildTabUrl(TabEmergency2)" class="@GetTabClass(TabEmergency2)">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                 </svg>
                 Liên hệ 2
             </a>
         </div>
-        
+
+        {{/* ===== FORM ===== */}}
         @using (Html.BeginUmbracoForm<UmbProfileController>("HandleUpdateProfile", new { RedirectUrl = Context.Request.Path + Context.Request.QueryString }))
         {
             <div asp-validation-summary="All" class="text-sm text-red-600 dark:text-red-400 mb-4"></div>
-            
+
             <div class="mb-4" @(currentTab != TabAccount ? "hidden" : null)>
                 <label asp-for="@profileModel.Name" class="block font-medium mb-1 text-gray-700 dark:text-gray-300">Tên</label>
-                <input asp-for="@profileModel.Name" type="text" name="Name" class="@inputClass" aria-required="true" readonly />
+                <input asp-for="@profileModel.Name" type="text" name="Name" class="@InputClass" readonly />
                 <span asp-validation-for="@profileModel.Name" class="text-sm text-red-600 dark:text-red-400 mt-1"></span>
             </div>
             <div class="mb-4" @(currentTab != TabAccount ? "hidden" : null)>
                 <label asp-for="@profileModel.Email" class="block font-medium mb-1 text-gray-700 dark:text-gray-300">Email hệ thống</label>
-                <input asp-for="@profileModel.Email" class="@inputClass" readonly/>
+                <input asp-for="@profileModel.Email" class="@InputClass" readonly />
                 <span asp-validation-for="@profileModel.Email" class="text-sm text-red-600 dark:text-red-400 mt-1"></span>
             </div>
             <div class="mb-4" @(currentTab != TabAccount ? "hidden" : null)>
                 <label asp-for="@profileModel.UserName" class="block font-medium mb-1 text-gray-700 dark:text-gray-300">Tên đăng nhập</label>
-                <input asp-for="@profileModel.UserName" class="@inputClass" />
+                <input asp-for="@profileModel.UserName" class="@InputClass" />
                 <span asp-validation-for="@profileModel.UserName" class="text-sm text-red-600 dark:text-red-400 mt-1"></span>
             </div>
             <div class="mb-4" @(currentTab != TabAccount ? "hidden" : null)>
-                <label for="OldPassword" class="block font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    Mật khẩu hiện tại (Chưa dùng)
-                </label>
-                <input type="password" id="OldPassword" name="OldPassword" class="@inputClass" autocomplete="current-password" />
-            </div>
-
-            <div class="mb-4" @(currentTab != TabAccount ? "hidden" : null)>
-                <label for="NewPassword" class="block font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    Mật khẩu mới (Chưa dùng)
-                </label>
-                <input type="password" id="NewPassword" name="NewPassword" class="@inputClass" autocomplete="new-password" />
+                <label class="block font-medium mb-1 text-gray-700 dark:text-gray-300">Mật khẩu hiện tại (Chưa dùng)</label>
+                <input type="password" name="OldPassword" class="@InputClass" autocomplete="current-password" />
             </div>
             <div class="mb-4" @(currentTab != TabAccount ? "hidden" : null)>
-                <label for="ConfirmPassword" class="block font-medium mb-1 text-gray-700 dark:text-gray-300">
-                    Xác nhận mật khẩu mới (Chưa dùng)
-                </label>
-                <input type="password" id="ConfirmPassword" name="ConfirmPassword" class="@inputClass" autocomplete="new-password" />
+                <label class="block font-medium mb-1 text-gray-700 dark:text-gray-300">Mật khẩu mới (Chưa dùng)</label>
+                <input type="password" name="NewPassword" class="@InputClass" autocomplete="new-password" />
+            </div>
+            <div class="mb-4" @(currentTab != TabAccount ? "hidden" : null)>
+                <label class="block font-medium mb-1 text-gray-700 dark:text-gray-300">Xác nhận mật khẩu mới (Chưa dùng)</label>
+                <input type="password" name="ConfirmPassword" class="@InputClass" autocomplete="new-password" />
             </div>
 
             @for (int i = 0; i < profileModel.MemberProperties.Count; i++)
             {
-                var prop = profileModel.MemberProperties[i];
-                var alias = prop.Alias.ToLower();                                            
-                var shouldShow = 
-                    (tabFieldMap.ContainsKey(currentTab) && tabFieldMap[currentTab].Contains(alias)) ||
+                var prop  = profileModel.MemberProperties[i];
+                var alias = prop.Alias.ToLower();
+
+                var shouldShow =
+                    (TabFieldMap.ContainsKey(currentTab) && TabFieldMap[currentTab].Contains(alias)) ||
                     (currentTab == TabEmergency1 && alias.StartsWith("emergencycontact1")) ||
                     (currentTab == TabEmergency2 && alias.StartsWith("emergencycontact2"));
 
@@ -194,58 +199,32 @@
 
                 <div class="mb-4">
                     <label class="block font-medium mb-1 text-gray-700 dark:text-gray-300">@prop.Name</label>
-                    @if (dropdownOptions.ContainsKey(alias))
+                    <input type="hidden" name="profileModel.MemberProperties[@i].Alias" value="@prop.Alias" />
+
+                    @if (DropdownOptions.ContainsKey(alias))
                     {
-                        var rawValue = prop.Value?.ToString() ?? string.Empty;
-                        string currentValue = null;
-
-                        if (!string.IsNullOrEmpty(rawValue) && rawValue.StartsWith("["))
-                        {
-                            try
+                        var currentValue = ParseDropdownValue(prop.Value?.ToString());
+                        <select name="profileModel.MemberProperties[@i].Value" class="@InputClass">
+                            <option value="">-- Chọn --</option>
+                            @foreach (var opt in DropdownOptions[alias])
                             {
-                                var arrayValue = JsonSerializer.Deserialize<string[]>(rawValue);
-                                currentValue = arrayValue?.FirstOrDefault();
-                            }
-                            catch
-                            {
-                                currentValue = rawValue;
-                            }
-                        }
-                        else
-                        {
-                            currentValue = rawValue;
-                        }
-
-                        <input type="hidden" name="profileModel.MemberProperties[@i].Alias" value="@prop.Alias" />
-                        <select name="profileModel.MemberProperties[@i].Value" class="@inputClass">
-                            @foreach (var option in dropdownOptions[alias])
-                            {
-                                <option value="@option" selected="@(option == currentValue ? "selected" : null)">@option</option>
+                                <option value="@opt" selected="@(opt == currentValue ? "selected" : null)">@opt</option>
                             }
                         </select>
                     }
-                    else if (dateAliases.Contains(alias))
+                    else if (DateAliases.Contains(alias))
                     {
-                        var rawValue = prop.Value?.ToString();
-                        string formattedDate = "";
-
-                        if (DateTime.TryParseExact(rawValue, "dd/MM/yyyy HH:mm:ss",
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            System.Globalization.DateTimeStyles.None, out DateTime parsedDate))
-                        {
-                            formattedDate = parsedDate.ToString("yyyy-MM-dd");
-                        }
-
-                        <input type="hidden" name="profileModel.MemberProperties[@i].Alias" value="@prop.Alias" />
-                        <input type="date" name="profileModel.MemberProperties[@i].Value" value="@formattedDate" class="@inputClass" />
+                        <input type="date" name="profileModel.MemberProperties[@i].Value"
+                               value="@ParseDateValue(prop.Value?.ToString())" class="@InputClass" />
                     }
                     else
                     {
-                        <input type="hidden" name="profileModel.MemberProperties[@i].Alias" value="@prop.Alias" />
-                        <input type="text" name="profileModel.MemberProperties[@i].Value" value="@prop.Value" id="@prop.Alias" class="@inputClass" />
+                        <input type="text" name="profileModel.MemberProperties[@i].Value"
+                               value="@prop.Value" id="@prop.Alias" class="@InputClass" />
                     }
                 </div>
             }
+
             <button type="submit" class="w-full bg-primary hover:bg-secondary text-white font-medium py-2 px-4 rounded transition duration-200 mt-4">
                 Lưu thay đổi
             </button>
