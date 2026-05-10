@@ -1,3 +1,4 @@
+@using Umbraco.Cms.Core.Models
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @using Umbraco.Cms.Web.Website.Controllers
 @using Umbraco.Cms.Web.Website.Models
@@ -28,12 +29,17 @@
     
     string baseQuery = string.Join("&", currentQuery.Select(kv => $"{kv.Key}={kv.Value}"));
 
-    string buildTabUrl(string tab)
+    string buildTabUrl1(string tab)
     {
         string separator = string.IsNullOrEmpty(baseQuery) ? "?" : $"&";
         return $"{Context.Request.Path}?{baseQuery}{separator}tab={tab}";
     }
-
+    string buildTabUrl(string tab)
+    {
+        return string.IsNullOrEmpty(baseQuery)
+            ? $"{Context.Request.Path}?tab={tab}"
+            : $"{Context.Request.Path}?{baseQuery}&tab={tab}";
+    }
     var currentTab = Context.Request.Query["tab"].ToString().ToLower() ?? TabAccount;
     currentTab = string.IsNullOrWhiteSpace(currentTab) ? TabAccount : currentTab;
 
@@ -56,15 +62,32 @@
             "position", "department", "dateofjoining", "contracttype" 
         } },
     };
+    var maritalDataType = await DataTypeService.GetAsync(Guid.Parse("f9e5b2d5-110c-4c14-8c1f-f7e5baecfa46"));
+    var contracttypeDataType = await DataTypeService.GetAsync(Guid.Parse("e23c2f83-7a82-4e71-914f-637d86ac69d0"));
+    var positionDataType = await DataTypeService.GetAsync(Guid.Parse("1e8931bc-2b27-447a-8a51-d65b475bfdcf"));
+    var deptDataType = await DataTypeService.GetAsync(Guid.Parse("e543ef9e-9f68-4689-9ed0-2216c4e45ead"));
+    var relationshipDataType = await DataTypeService.GetAsync(Guid.Parse("9d8451a8-4aa3-4082-897b-c57e981be393"));
 
-    var dropdownOptions = new Dictionary<string, List<string>>
+    List<string> GetDropdownOptions(IDataType? dt)
+        {
+            if (dt is Umbraco.Cms.Core.Models.DataType model
+                && model.ConfigurationData is Dictionary<string, object> configDict
+                && configDict.TryGetValue("items", out var itemsObj))
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(itemsObj);
+                return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+            }
+            return new List<string>();
+        }
+     var dropdownOptions = new Dictionary<string, List<string>>
     {
-        { "maritalstatus", new List<string> { "Độc thân", "Đã kết hôn", "Ly hôn" } },
-        { "contracttype", new List<string> { "Chính thức", "Thời vụ", "Thử việc", "Khác" } },
-        { "position", new List<string> { "Chief Commercial Officer (CCO)", "Managing Director", "Sales Director", "Sales Manager","Chief Accountant","Sales Assistant Manager","Sales Admin" } },
-        { "department", new List<string> { "BOD", "Account", "Sales","Services" } },
-        { "emergencycontact1relationship", new List<string> { "Cha", "Mẹ", "Vợ", "Chồng", "Con", "Anh", "Chị", "Em", "Bạn" } },
-        { "emergencycontact2relationship", new List<string> { "Cha", "Mẹ", "Vợ", "Chồng", "Con", "Anh", "Chị", "Em", "Bạn"} }
+        { "maritalstatus", GetDropdownOptions(maritalDataType) },
+        { "contracttype", GetDropdownOptions(contracttypeDataType) },
+        { "position", GetDropdownOptions(positionDataType) },
+        { "department", GetDropdownOptions(deptDataType) },
+        { "emergencycontact1relationship", GetDropdownOptions(relationshipDataType) },
+        { "emergencycontact2relationship", GetDropdownOptions(relationshipDataType) }
+
     };
 }
 
@@ -156,7 +179,7 @@
             @for (int i = 0; i < profileModel.MemberProperties.Count; i++)
             {
                 var prop = profileModel.MemberProperties[i];
-                var alias = prop.Alias.ToLower();                                                 
+                var alias = prop.Alias.ToLower();                                            
                 var shouldShow = 
                     (tabFieldMap.ContainsKey(currentTab) && tabFieldMap[currentTab].Contains(alias)) ||
                     (currentTab == TabEmergency1 && alias.StartsWith("emergencycontact1")) ||
@@ -223,7 +246,6 @@
                     }
                 </div>
             }
-                        
             <button type="submit" class="w-full bg-primary hover:bg-secondary text-white font-medium py-2 px-4 rounded transition duration-200 mt-4">
                 Lưu thay đổi
             </button>
