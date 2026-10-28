@@ -3,7 +3,7 @@
 @using System.Linq
 
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
     var query = Context.Request.Query.ContainsKey("q")
         ? Context.Request.Query["q"].ToString().ToLowerInvariant()
         : "";
@@ -25,7 +25,7 @@
     var totalPages = (int)Math.Ceiling((double)total / pageSize);
     var paged = results.Skip((page - 1) * pageSize).Take(pageSize);
 }
-@await Html.PartialAsync("Partials/Shared/banner", Model)
+@await Html.PartialAsync("Partials/Shared/Banner", Model)
 <div class="container-main">
     <form method="get" class="mb-4">
         <div class="flex items-center gap-4">

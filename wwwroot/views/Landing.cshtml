@@ -2,7 +2,7 @@
 @inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
 
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
     var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
     var fallbackPartial = "Partials/blockgrid/Default";
     var title = Model.HasValue("title") 
@@ -10,7 +10,7 @@
         : Model.Name;
     var description = (Model.Value<string>("description")?? "").Replace("\n", "<br />");
 }
-@await Html.PartialAsync("Partials/Shared/banner", Model)
+@await Html.PartialAsync("Partials/Shared/Banner", Model)
 @if (blocks?.Any() == true)
 {
     <section class="container-main Landing">

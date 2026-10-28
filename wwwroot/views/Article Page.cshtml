@@ -3,7 +3,7 @@
 @using Umbraco.Cms.Core.Models.Blocks
 
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
     var blocks = Model.Value<BlockGridModel>("pageContent");
     
     // Tiêu đề và thông tin bài viết
@@ -11,7 +11,7 @@
     var publishDate = Model.CreateDate.ToString("dd/MM/yyyy");
 }
 
-@await Html.PartialAsync("Partials/Shared/banner", Model)
+@await Html.PartialAsync("Partials/Shared/Banner", Model)
 
 <article class="vtl-container py-12 md:py-20">
     @* 1. Header của Bài viết: Tiêu đề và Ngày đăng *@

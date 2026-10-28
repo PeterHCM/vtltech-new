@@ -3,7 +3,7 @@
 @using Umbraco.Extensions
 
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
     var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
     var fallbackPartial = "Partials/blockgrid/Default";
     
@@ -18,7 +18,7 @@
         : "/media/default/VTL_logo.svg";
 }
 
-@await Html.PartialAsync("Partials/Shared/banner", Model)
+@await Html.PartialAsync("Partials/Shared/Banner", Model)
 
 @* Bao bọc toàn bộ trong vtl-container *@
 <main class="vtl-container py-16 md:py-24">

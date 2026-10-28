@@ -2,7 +2,7 @@
 @using Umbraco.Cms.Core.Models
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
-	Layout = "layout.cshtml";
+	Layout = "Layout.cshtml";
 }
 @{
     var settings = Umbraco.ContentAtRoot().FirstOrDefault(x => x.ContentType.Alias == "companySettings");
@@ -51,7 +51,7 @@
     }
 
 }
-@await Html.PartialAsync("Partials/Shared/banner")
+@await Html.PartialAsync("Partials/Shared/Banner")
 <section class="mx-auto py-8 px-6 md:px-12 lg:px-24">    
     @if (!string.IsNullOrEmpty(documentTitle))
     {

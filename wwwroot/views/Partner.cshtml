@@ -1,7 +1,7 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
 
     var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
     var fallbackPartial = "Partials/blockgrid/Default";
@@ -14,7 +14,7 @@
         : "/media/default/VTL_logo.svg";
 }
 
-@await Html.PartialAsync("Partials/Shared/banner", Model)
+@await Html.PartialAsync("Partials/Shared/Banner", Model)
 
 <section class="container-main partner">
     <div class="flex justify-center items-center mt-8">

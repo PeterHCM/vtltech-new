@@ -2,7 +2,7 @@
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Extensions
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
     
     // Lấy dữ liệu an toàn
     var description = Model.Value<string>("description");
@@ -12,7 +12,7 @@
     var title = Model.HasValue("title") ? Model.Value<string>("title") : Model.Name;
 }
 
-@await Html.PartialAsync("Partials/Shared/banner", Model)
+@await Html.PartialAsync("Partials/Shared/Banner", Model)
 
 @* Dùng vtl-container để căn giữa 1440px *@
 <main class="vtl-container py-12 md:py-20">

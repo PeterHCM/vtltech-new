@@ -2,7 +2,7 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine Engine
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
 
     var sectionName = Model.Value<string>("section")?.ToLowerInvariant() ?? "default";
     var items = Model.Children
@@ -15,7 +15,7 @@
 }
 
 @* 1. Banner Header đồng bộ phong cách Tech *@
-@await Html.PartialAsync("Partials/Shared/banner", Model)
+@await Html.PartialAsync("Partials/Shared/Banner", Model)
 
 @* 2. Section Danh sách (Listing) - Thêm nền Grid mờ *@
 <section class="relative py-16 md:py-24 bg-white dark:bg-[#080809] overflow-hidden">

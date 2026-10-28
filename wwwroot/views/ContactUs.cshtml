@@ -3,7 +3,7 @@
 @using Umbraco.Cms.Core.Models
 @using System.Globalization
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
     var settings = Umbraco.ContentAtRoot()
                     .FirstOrDefault(x => x.ContentType.Alias == "companySettings");
     
@@ -27,7 +27,7 @@
     var zaloQrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={zaloLink}";
 }
 
-@await Html.PartialAsync("Partials/Shared/banner", Model)
+@await Html.PartialAsync("Partials/Shared/Banner", Model)
 
 <section class="vtl-container py-16 md:py-24">
     @* 1. Header Section chuẩn VTL *@

@@ -2,7 +2,7 @@
 @inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
 
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
 
     var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
     var fallbackPartial = "Partials/blockgrid/Default";

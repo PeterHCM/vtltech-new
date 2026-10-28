@@ -2,13 +2,13 @@
 @inject Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine viewEngine
 
 @{
-    Layout = "layout.cshtml";
+    Layout = "Layout.cshtml";
     var blocks = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockGridModel>("pageContent");
     var fallbackPartial = "Partials/blockgrid/Default";
 }
 
 @* 1. Banner luôn trải dài toàn màn hình (Full Width) *@
-@await Html.PartialAsync("Partials/Shared/banner", Model)
+@await Html.PartialAsync("Partials/Shared/Banner", Model)
 
 @if (blocks?.Any() == true)
 {
